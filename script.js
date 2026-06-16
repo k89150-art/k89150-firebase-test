@@ -1301,9 +1301,21 @@ window.addConfig = function () {
 
 /* ====== 登入狀態顯示 ====== */
 
-function setSyncStatus(text) {
+function setSyncStatus(text, type = "muted") {
   const el = document.getElementById("syncStatus");
-  if (el) el.textContent = text;
+  if (!el) return;
+
+  el.textContent = text;
+
+  el.classList.remove(
+    "status-muted",
+    "status-saving",
+    "status-saved",
+    "status-error",
+    "status-login"
+  );
+
+  el.classList.add(`status-${type}`);
 }
 
 function updateAuthUI(user) {
