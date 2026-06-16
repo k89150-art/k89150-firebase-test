@@ -71,6 +71,15 @@ function getUserDocRef() {
   if (!currentUser) return null;
   return doc(db, "users", currentUser.uid, "appData", "main");
 }
+function requireLogin() {
+  if (!currentUser) {
+    alert("請先使用 Google 登入，才能操作資料。");
+    setSyncStatus("請先登入後再操作");
+    return false;
+  }
+
+  return true;
+}
 
 const partTypes = [
   "上蓋",
