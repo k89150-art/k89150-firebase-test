@@ -415,7 +415,6 @@ function findHistoryByComboKey(comboKey) {
   return null;
 }
 
-```js
 function askDeleteReasonForConfig(row) {
   return new Promise(resolve => {
     const choice = prompt(
