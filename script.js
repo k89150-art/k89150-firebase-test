@@ -419,7 +419,6 @@ return new Promise(resolve => {
 const oldOverlay = document.getElementById("deleteReasonOverlay");
 if (oldOverlay) oldOverlay.remove();
 
-```
 const overlay = document.createElement("div");
 overlay.id = "deleteReasonOverlay";
 
