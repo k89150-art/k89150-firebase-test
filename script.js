@@ -966,20 +966,33 @@ function getHistoryData() {
   return data;
 }
 
-    const data = collectCurrentData();
+async function saveData() {
+if (isApplyingRemoteData) return;
 
-  try {
-    setSyncStatus("儲存中...", "saving");
+const userDocRef = getUserDocRef();
 
-    await setDoc(userDocRef, data);
-
-    setSyncStatus("已儲存", "saved");
-  } catch (error) {
-    console.error("Firestore 儲存失敗：", error);
-    alert("Firestore 儲存失敗：" + error.message);
-    setSyncStatus("儲存失敗", "error");
-  }
+if (!userDocRef) {
+console.log("尚未登入，暫不儲存");
+setSyncStatus("尚未登入，資料不會儲存到雲端", "muted");
+return;
 }
+
+const data = collectCurrentData();
+
+try {
+setSyncStatus("儲存中...", "saving");
+
+await setDoc(userDocRef, data);
+
+setSyncStatus("已儲存", "saved");
+
+} catch (error) {
+console.error("Firestore 儲存失敗：", error);
+alert("Firestore 儲存失敗：" + error.message);
+setSyncStatus("儲存失敗", "error");
+}
+}
+
 
 /* ====== 載入資料 ====== */
 
