@@ -419,7 +419,6 @@ function askDeleteReasonForConfig(row) {
 return new Promise(resolve => {
 const modal = document.getElementById("deleteReasonModal");
 
-```
 function fallbackPrompt() {
   const choice = prompt(
     "這個配置要移除，請選擇原因：\n\n" +
@@ -509,7 +508,6 @@ confirmBtn.onclick = () => {
 modal.style.display = "flex";
 modal.setAttribute("aria-hidden", "false");
 document.body.classList.add("dialog-open");
-```
 
 });
 }
