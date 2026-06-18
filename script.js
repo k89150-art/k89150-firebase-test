@@ -418,57 +418,116 @@ function findHistoryByComboKey(comboKey) {
 ```js
 function askDeleteReasonForConfig(row) {
   return new Promise(resolve => {
-    const oldDialog = document.getElementById("deleteReasonDialog");
-    if (oldDialog) oldDialog.remove();
+    const oldModal = document.getElementById("deleteReasonOverlay");
+    if (oldModal) oldModal.remove();
 
-    const dialog = document.createElement("dialog");
-    dialog.id = "deleteReasonDialog";
+    const overlay = document.createElement("div");
+    overlay.id = "deleteReasonOverlay";
 
-    dialog.innerHTML = `
-      <div class="reason-dialog-card">
-        <h4>刪除配置紀錄</h4>
+    overlay.style.setProperty("position", "fixed", "important");
+    overlay.style.setProperty("left", "0", "important");
+    overlay.style.setProperty("top", "0", "important");
+    overlay.style.setProperty("right", "0", "important");
+    overlay.style.setProperty("bottom", "0", "important");
+    overlay.style.setProperty("width", "100vw", "important");
+    overlay.style.setProperty("height", "100dvh", "important");
+    overlay.style.setProperty("background", "rgba(0, 0, 0, 0.78)", "important");
+    overlay.style.setProperty("z-index", "2147483647", "important");
+    overlay.style.setProperty("display", "flex", "important");
+    overlay.style.setProperty("align-items", "center", "important");
+    overlay.style.setProperty("justify-content", "center", "important");
+    overlay.style.setProperty("padding", "16px", "important");
+    overlay.style.setProperty("box-sizing", "border-box", "important");
 
-        <p class="reason-dialog-text">
-          請選擇這個配置拆掉的原因
-        </p>
+    const card = document.createElement("div");
 
-        <label for="deleteReasonSelect">原因</label>
-        <select id="deleteReasonSelect">
-          <option value="不好用">不好用</option>
-          <option value="好用，暫時拆掉">好用，但暫時拆掉測其他組合</option>
-          <option value="普通 / 無感">普通 / 無感</option>
-          <option value="打錯，不記錄">打錯，不記錄</option>
-        </select>
+    card.style.setProperty("width", "420px", "important");
+    card.style.setProperty("max-width", "100%", "important");
+    card.style.setProperty("background", "#1b1b1b", "important");
+    card.style.setProperty("color", "#ffffff", "important");
+    card.style.setProperty("border", "1px solid #3a3a3a", "important");
+    card.style.setProperty("border-radius", "14px", "important");
+    card.style.setProperty("padding", "16px", "important");
+    card.style.setProperty("box-sizing", "border-box", "important");
+    card.style.setProperty("box-shadow", "0 12px 32px rgba(0, 0, 0, 0.65)", "important");
+    card.style.setProperty("font-family", "Arial, 'Microsoft JhengHei', sans-serif", "important");
 
-        <label for="deleteReasonNote">備註</label>
-        <textarea
-          id="deleteReasonNote"
-          placeholder="例如：太容易爆、持久不夠、攻擊不穩。可不填。"
-        ></textarea>
+    card.innerHTML = `
+      <h4 style="margin:0 0 12px 0;font-size:18px;color:#ffffff;">
+        刪除配置紀錄
+      </h4>
 
-        <div class="reason-dialog-actions">
-          <button type="button" id="cancelDeleteReasonBtn">取消刪除</button>
-          <button type="button" id="confirmDeleteReasonBtn">確認刪除</button>
-        </div>
+      <div style="margin-bottom:12px;color:#dcdcdc;font-size:14px;line-height:1.5;">
+        請選擇這個配置拆掉的原因
+      </div>
+
+      <label style="display:block;margin-bottom:6px;color:#dcdcdc;font-size:14px;">
+        原因
+      </label>
+
+      <select id="deleteReasonSelect" style="
+        width:100%;
+        margin-bottom:12px;
+        background:#242424;
+        color:#ffffff;
+        border:1px solid #444;
+        border-radius:7px;
+        padding:9px 10px;
+        box-sizing:border-box;
+        font-size:14px;
+      ">
+        <option value="不好用">不好用</option>
+        <option value="好用，暫時拆掉">好用，但暫時拆掉測其他組合</option>
+        <option value="普通 / 無感">普通 / 無感</option>
+        <option value="打錯，不記錄">打錯，不記錄</option>
+      </select>
+
+      <label style="display:block;margin-bottom:6px;color:#dcdcdc;font-size:14px;">
+        備註
+      </label>
+
+      <textarea
+        id="deleteReasonNote"
+        placeholder="例如：太容易爆、持久不夠、攻擊不穩。可不填。"
+        style="
+          width:100%;
+          min-height:80px;
+          resize:vertical;
+          margin-bottom:14px;
+          background:#242424;
+          color:#ffffff;
+          border:1px solid #444;
+          border-radius:7px;
+          padding:9px 10px;
+          box-sizing:border-box;
+          font-size:14px;
+        "
+      ></textarea>
+
+      <div style="display:flex;gap:8px;justify-content:flex-end;">
+        <button type="button" id="cancelDeleteReasonBtn">取消刪除</button>
+        <button type="button" id="confirmDeleteReasonBtn">確認刪除</button>
       </div>
     `;
 
-    document.body.appendChild(dialog);
+    overlay.appendChild(card);
+    document.documentElement.appendChild(overlay);
 
-    const reasonSelect = dialog.querySelector("#deleteReasonSelect");
-    const noteInput = dialog.querySelector("#deleteReasonNote");
-    const cancelBtn = dialog.querySelector("#cancelDeleteReasonBtn");
-    const confirmBtn = dialog.querySelector("#confirmDeleteReasonBtn");
+    document.body.style.overflow = "hidden";
 
-    function closeDialog(value) {
-      if (dialog.open) dialog.close();
-      dialog.remove();
-      document.body.classList.remove("dialog-open");
+    const reasonSelect = card.querySelector("#deleteReasonSelect");
+    const noteInput = card.querySelector("#deleteReasonNote");
+    const cancelBtn = card.querySelector("#cancelDeleteReasonBtn");
+    const confirmBtn = card.querySelector("#confirmDeleteReasonBtn");
+
+    function closeModal(value) {
+      overlay.remove();
+      document.body.style.overflow = "";
       resolve(value);
     }
 
     cancelBtn.addEventListener("click", () => {
-      closeDialog(null);
+      closeModal(null);
     });
 
     confirmBtn.addEventListener("click", () => {
@@ -476,12 +535,14 @@ function askDeleteReasonForConfig(row) {
       const note = noteInput.value.trim();
 
       if (reason === "打錯，不記錄") {
-        closeDialog(false);
+        closeModal(false);
         return;
       }
 
-      closeDialog(buildHistoryRecordFromConfigRow(row, reason, note));
+      closeModal(buildHistoryRecordFromConfigRow(row, reason, note));
     });
+  });
+}
 
     dialog.addEventListener("cancel", event => {
       event.preventDefault();
