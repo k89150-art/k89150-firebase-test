@@ -417,21 +417,14 @@ function findHistoryByComboKey(comboKey) {
 
 function askDeleteReasonForConfig(row) {
   return new Promise(resolve => {
-    const oldDialog = document.getElementById("deleteReasonDialog");
-    if (oldDialog) oldDialog.remove();
+    const backdrop = document.createElement("div");
+    backdrop.className = "modal-backdrop";
 
-    const dialog = document.createElement("dialog");
-    dialog.id = "deleteReasonDialog";
-
-    dialog.innerHTML = `
-      <div class="reason-dialog-card">
+    backdrop.innerHTML = `
+      <div class="modal-card">
         <h4>刪除配置紀錄</h4>
 
-        <p class="reason-dialog-text">
-          請選擇這個配置拆掉的原因
-        </p>
-
-        <label for="deleteReasonSelect">原因</label>
+        <label>請選擇拆掉原因</label>
         <select id="deleteReasonSelect">
           <option value="不好用">不好用</option>
           <option value="好用，暫時拆掉">好用，但暫時拆掉測其他組合</option>
@@ -439,101 +432,41 @@ function askDeleteReasonForConfig(row) {
           <option value="打錯，不記錄">打錯，不記錄</option>
         </select>
 
-        <label for="deleteReasonNote">備註</label>
-        <textarea
-          id="deleteReasonNote"
-          placeholder="例如：太容易爆、持久不夠、攻擊不穩。可不填。"
-        ></textarea>
+        <label>備註</label>
+        <textarea id="deleteReasonNote" placeholder="例如：太容易爆、持久不夠、攻擊不穩。可不填。"></textarea>
 
-        <div class="reason-dialog-actions">
+        <div class="modal-actions">
           <button type="button" id="cancelDeleteReasonBtn">取消刪除</button>
           <button type="button" id="confirmDeleteReasonBtn">確認刪除</button>
         </div>
       </div>
     `;
 
-    document.body.appendChild(dialog);
+    document.body.appendChild(backdrop);
 
-    const reasonSelect = dialog.querySelector("#deleteReasonSelect");
-    const noteInput = dialog.querySelector("#deleteReasonNote");
-    const cancelBtn = dialog.querySelector("#cancelDeleteReasonBtn");
-    const confirmBtn = dialog.querySelector("#confirmDeleteReasonBtn");
-
-    function closeDialog(value) {
-      if (dialog.open) dialog.close();
-      dialog.remove();
-      document.body.classList.remove("dialog-open");
-      resolve(value);
-    }
+    const reasonSelect = backdrop.querySelector("#deleteReasonSelect");
+    const noteInput = backdrop.querySelector("#deleteReasonNote");
+    const cancelBtn = backdrop.querySelector("#cancelDeleteReasonBtn");
+    const confirmBtn = backdrop.querySelector("#confirmDeleteReasonBtn");
 
     cancelBtn.addEventListener("click", () => {
-      closeDialog(null);
+      backdrop.remove();
+      resolve(null);
     });
 
     confirmBtn.addEventListener("click", () => {
       const reason = reasonSelect.value;
       const note = noteInput.value.trim();
 
+      backdrop.remove();
+
       if (reason === "打錯，不記錄") {
-        closeDialog(false);
-        return;
-      }
-
-      closeDialog(buildHistoryRecordFromConfigRow(row, reason, note));
-    });
-
-    dialog.addEventListener("cancel", event => {
-      event.preventDefault();
-      closeDialog(null);
-    });
-
-    document.body.classList.add("dialog-open");
-
-    try {
-      if (typeof dialog.showModal === "function") {
-        dialog.showModal();
-      } else {
-        throw new Error("dialog.showModal not supported");
-      }
-    } catch (error) {
-      const choice = prompt(
-        "這個配置要移除，請選擇原因：\n\n" +
-        "1：不好用\n" +
-        "2：好用，但暫時拆掉測其他組合\n" +
-        "3：普通 / 無感\n" +
-        "4：打錯，不記錄\n\n" +
-        "請輸入 1、2、3 或 4"
-      );
-
-      dialog.remove();
-      document.body.classList.remove("dialog-open");
-
-      if (choice === null) {
-        resolve(null);
-        return;
-      }
-
-      const reasonMap = {
-        "1": "不好用",
-        "2": "好用，暫時拆掉",
-        "3": "普通 / 無感",
-        "4": "打錯，不記錄"
-      };
-
-      if (!reasonMap[choice]) {
-        alert("請輸入 1、2、3 或 4");
-        resolve(null);
-        return;
-      }
-
-      if (choice === "4") {
         resolve(false);
         return;
       }
 
-      const note = prompt("可以輸入備註，例如：太容易爆、持久不夠、攻擊不穩。沒有要寫可以空白。", "");
-      resolve(buildHistoryRecordFromConfigRow(row, reasonMap[choice], note || ""));
-    }
+      resolve(buildHistoryRecordFromConfigRow(row, reason, note));
+    });
   });
 }
 
