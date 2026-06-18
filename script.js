@@ -415,98 +415,44 @@ function findHistoryByComboKey(comboKey) {
   return null;
 }
 
-```js
 function askDeleteReasonForConfig(row) {
   return new Promise(resolve => {
+    const oldDialog = document.getElementById("deleteReasonDialog");
+    if (oldDialog) oldDialog.remove();
+
     const dialog = document.createElement("dialog");
+    dialog.id = "deleteReasonDialog";
 
     dialog.innerHTML = `
-      <form method="dialog" style="
-        width: 360px;
-        max-width: 90vw;
-        background: #1b1b1b;
-        color: #ffffff;
-        border: 1px solid #3a3a3a;
-        border-radius: 14px;
-        padding: 16px;
-        box-sizing: border-box;
-        font-family: Arial, 'Microsoft JhengHei', sans-serif;
-      ">
-        <h4 style="margin:0 0 12px 0;font-size:18px;color:#ffffff;">
-          刪除配置紀錄
-        </h4>
+      <div class="reason-dialog-card">
+        <h4>刪除配置紀錄</h4>
 
-        <div style="margin-bottom:12px;color:#dcdcdc;font-size:14px;line-height:1.5;">
+        <p class="reason-dialog-text">
           請選擇這個配置拆掉的原因
-        </div>
+        </p>
 
-        <label style="display:block;margin-bottom:6px;color:#dcdcdc;font-size:14px;">
-          原因
-        </label>
-
-        <select id="deleteReasonSelect" style="
-          width:100%;
-          margin-bottom:12px;
-          background:#242424;
-          color:#ffffff;
-          border:1px solid #444;
-          border-radius:7px;
-          padding:9px 10px;
-          box-sizing:border-box;
-        ">
+        <label for="deleteReasonSelect">原因</label>
+        <select id="deleteReasonSelect">
           <option value="不好用">不好用</option>
           <option value="好用，暫時拆掉">好用，但暫時拆掉測其他組合</option>
           <option value="普通 / 無感">普通 / 無感</option>
           <option value="打錯，不記錄">打錯，不記錄</option>
         </select>
 
-        <label style="display:block;margin-bottom:6px;color:#dcdcdc;font-size:14px;">
-          備註
-        </label>
-
+        <label for="deleteReasonNote">備註</label>
         <textarea
           id="deleteReasonNote"
           placeholder="例如：太容易爆、持久不夠、攻擊不穩。可不填。"
-          style="
-            width:100%;
-            min-height:80px;
-            resize:vertical;
-            margin-bottom:14px;
-            background:#242424;
-            color:#ffffff;
-            border:1px solid #444;
-            border-radius:7px;
-            padding:9px 10px;
-            box-sizing:border-box;
-          "
         ></textarea>
 
-        <div style="display:flex;gap:8px;justify-content:flex-end;">
+        <div class="reason-dialog-actions">
           <button type="button" id="cancelDeleteReasonBtn">取消刪除</button>
           <button type="button" id="confirmDeleteReasonBtn">確認刪除</button>
         </div>
-      </form>
+      </div>
     `;
-
-    dialog.style.border = "none";
-    dialog.style.padding = "0";
-    dialog.style.background = "transparent";
-    dialog.style.maxWidth = "95vw";
-    dialog.style.position = "fixed";
-    dialog.style.top = "50%";
-    dialog.style.left = "50%";
-    dialog.style.transform = "translate(-50%, -50%)";
-    dialog.style.zIndex = "999999";
 
     document.body.appendChild(dialog);
-
-    const style = document.createElement("style");
-    style.textContent = `
-      dialog::backdrop {
-        background: rgba(0, 0, 0, 0.75);
-      }
-    `;
-    document.head.appendChild(style);
 
     const reasonSelect = dialog.querySelector("#deleteReasonSelect");
     const noteInput = dialog.querySelector("#deleteReasonNote");
@@ -514,9 +460,9 @@ function askDeleteReasonForConfig(row) {
     const confirmBtn = dialog.querySelector("#confirmDeleteReasonBtn");
 
     function closeDialog(value) {
-      dialog.close();
+      if (dialog.open) dialog.close();
       dialog.remove();
-      style.remove();
+      document.body.classList.remove("dialog-open");
       resolve(value);
     }
 
@@ -536,7 +482,61 @@ function askDeleteReasonForConfig(row) {
       closeDialog(buildHistoryRecordFromConfigRow(row, reason, note));
     });
 
-    dialog.showModal();
+    dialog.addEventListener("cancel", event => {
+      event.preventDefault();
+      closeDialog(null);
+    });
+
+    document.body.classList.add("dialog-open");
+
+    if (typeof dialog.showModal === "function") {
+      dialog.showModal();
+    } else {
+      const choice = prompt(
+        "這個配置要移除，請選擇原因：
+
+" +
+        "1：不好用
+" +
+        "2：好用，但暫時拆掉測其他組合
+" +
+        "3：普通 / 無感
+" +
+        "4：打錯，不記錄
+
+" +
+        "請輸入 1、2、3 或 4"
+      );
+
+      dialog.remove();
+      document.body.classList.remove("dialog-open");
+
+      if (choice === null) {
+        resolve(null);
+        return;
+      }
+
+      const reasonMap = {
+        "1": "不好用",
+        "2": "好用，暫時拆掉",
+        "3": "普通 / 無感",
+        "4": "打錯，不記錄"
+      };
+
+      if (!reasonMap[choice]) {
+        alert("請輸入 1、2、3 或 4");
+        resolve(null);
+        return;
+      }
+
+      if (choice === "4") {
+        resolve(false);
+        return;
+      }
+
+      const note = prompt("可以輸入備註，例如：太容易爆、持久不夠、攻擊不穩。沒有要寫可以空白。", "");
+      resolve(buildHistoryRecordFromConfigRow(row, reasonMap[choice], note || ""));
+    }
   });
 }
 
