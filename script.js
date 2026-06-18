@@ -12,6 +12,7 @@ import {
   getFirestore,
   doc,
   setDoc,
+  getDoc,
   onSnapshot
 } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
 
@@ -34,7 +35,7 @@ const newFirebaseConfig = {
 };
 
 /*
-  舊 Firebase：只用來匯入舊 Realtime Database 資料
+  舊 Firebase：只用來匯入你原本已經記錄好的 Realtime Database 資料
 */
 const oldFirebaseConfig = {
   apiKey: "AIzaSyAi_TtnfCr5DOCIkxWIf2yTkBoH9MWTchA",
@@ -54,6 +55,11 @@ const provider = new GoogleAuthProvider();
 const db = getFirestore(newApp);
 const oldDatabase = getDatabase(oldApp);
 
+/*
+  你的舊資料路徑。
+  你的網頁用 chris。
+  朋友的網頁之後改成 friend。
+*/
 const OLD_USER_ID = "chris";
 const OLD_DB_PATH = `beybladeData/${OLD_USER_ID}`;
 
@@ -131,8 +137,6 @@ const configEditColumnMap = {
   8: "軸心"
 };
 
-/* ====== 型號格式整理 ====== */
-
 function normalizeModel(model) {
   const text = String(model || "").trim().replace(/\s+/g, " ");
 
@@ -171,7 +175,7 @@ function normalizeAllModelCells() {
 }
 
 function getSeriesFromModel(model) {
-  const text = String(model || "").trim().toUpperCase();
+  const text = model.trim().toUpperCase();
 
   if (text.startsWith("CX")) return "CX";
   if (text.startsWith("BX")) return "BX";
@@ -281,9 +285,6 @@ function getEditingButtons(tableType) {
     <button onclick="cancelEditRow(this, '${tableType}')">取消</button>
   `;
 }
-
-/* ====== 歷史測試紀錄功能 ====== */
-
 function normalizeComboValue(value) {
   const text = String(value || "").trim();
   return text && text !== "-" ? text : "-";
@@ -386,10 +387,7 @@ function createHistoryRow(record) {
   row.insertCell(4).innerText = record.result || "-";
   row.insertCell(5).innerText = record.note || "-";
   row.insertCell(6).innerText = record.date || "-";
-  row.insertCell(7).innerHTML = `
-    <button onclick="restoreHistoryRow(this)">還原</button>
-    <button onclick="deleteHistoryRow(this)">刪除</button>
-  `;
+  row.insertCell(7).innerHTML = `<button onclick="deleteHistoryRow(this)">刪除</button>`;
 }
 
 function findHistoryByComboKey(comboKey) {
@@ -416,10 +414,6 @@ function findHistoryByComboKey(comboKey) {
 }
 
 function askDeleteReasonForConfig(row) {
-return new Promise(resolve => {
-const modal = document.getElementById("deleteReasonModal");
-
-function fallbackPrompt() {
   const choice = prompt(
     "這個配置要移除，請選擇原因：\n\n" +
     "1：不好用\n" +
@@ -429,10 +423,7 @@ function fallbackPrompt() {
     "請輸入 1、2、3 或 4"
   );
 
-  if (choice === null) {
-    resolve(null);
-    return;
-  }
+  if (choice === null) return null;
 
   const reasonMap = {
     "1": "不好用",
@@ -443,169 +434,17 @@ function fallbackPrompt() {
 
   if (!reasonMap[choice]) {
     alert("請輸入 1、2、3 或 4");
-    resolve(null);
-    return;
+    return null;
   }
 
   if (choice === "4") {
-    resolve(false);
-    return;
+    return false;
   }
 
-  const note = prompt(
-    "可以輸入備註，例如：太容易爆、持久不夠、攻擊不穩。\n\n沒有要寫可以空白。",
-    ""
-  );
+  const note = prompt("可以輸入備註，例如：太容易爆、持久不夠、攻擊不穩。沒有要寫可以空白。", "");
 
-  resolve(buildHistoryRecordFromConfigRow(row, reasonMap[choice], note || ""));
+  return buildHistoryRecordFromConfigRow(row, reasonMap[choice], note || "");
 }
-
-if (!modal) {
-  fallbackPrompt();
-  return;
-}
-
-const reasonSelect = modal.querySelector("#deleteReasonSelect");
-const noteInput = modal.querySelector("#deleteReasonNote");
-const cancelBtn = modal.querySelector("#cancelDeleteReasonBtn");
-const confirmBtn = modal.querySelector("#confirmDeleteReasonBtn");
-
-if (!reasonSelect || !noteInput || !cancelBtn || !confirmBtn) {
-  fallbackPrompt();
-  return;
-}
-
-reasonSelect.value = "不好用";
-noteInput.value = "";
-
-function closeModal(value) {
-  modal.style.display = "none";
-  modal.setAttribute("aria-hidden", "true");
-  document.body.classList.remove("dialog-open");
-
-  cancelBtn.onclick = null;
-  confirmBtn.onclick = null;
-
-  resolve(value);
-}
-
-cancelBtn.onclick = () => {
-  closeModal(null);
-};
-
-confirmBtn.onclick = () => {
-  const reason = reasonSelect.value;
-  const note = noteInput.value.trim();
-
-  if (reason === "打錯，不記錄") {
-    closeModal(false);
-    return;
-  }
-
-  closeModal(buildHistoryRecordFromConfigRow(row, reason, note));
-};
-
-modal.style.display = "flex";
-modal.setAttribute("aria-hidden", "false");
-document.body.classList.add("dialog-open");
-
-});
-}
-
-window.restoreHistoryRow = function (button) {
-  if (!requireLogin()) return;
-
-  const historyRow = button.parentElement.parentElement;
-  const comboKey = historyRow.dataset.comboKey || "";
-
-  if (!comboKey) {
-    alert("這筆歷史紀錄缺少組合資料，無法還原。");
-    return;
-  }
-
-  const values = comboKey.split("|");
-
-  while (values.length < 8) {
-    values.push("-");
-  }
-
-  const layer = normalizeComboValue(values[0]);
-  const lockPart = normalizeComboValue(values[1]);
-  const mainPart = normalizeComboValue(values[2]);
-  const transcendPart = normalizeComboValue(values[3]);
-  const metalPart = normalizeComboValue(values[4]);
-  const auxPart = normalizeComboValue(values[5]);
-  const fix = normalizeComboValue(values[6]);
-  const axis = normalizeComboValue(values[7]);
-
-  const model = normalizeModel(historyRow.cells[0]?.innerText.trim() || "");
-
-  const isCxCombo =
-    lockPart !== "-" ||
-    auxPart !== "-" ||
-    transcendPart !== "-" ||
-    metalPart !== "-";
-
-  const total = getTotalParts();
-  const used = getUsedParts();
-
-  const selectedParts = [
-    ["上蓋", isCxCombo ? "" : layer],
-    ["紋章鎖", lockPart === "-" ? "" : lockPart],
-    ["主要戰刃", mainPart.includes("/") || mainPart === "-" ? "" : mainPart],
-    ["超越戰刃", transcendPart === "-" ? "" : transcendPart],
-    ["金屬戰刃", metalPart === "-" ? "" : metalPart],
-    ["輔助戰刃", auxPart === "-" ? "" : auxPart],
-    ["固鎖", fix === "-" ? "" : fix],
-    ["軸心", axis === "-" ? "" : axis]
-  ];
-
-  for (const [type, name] of selectedParts) {
-    if (!checkStock(type, name, total, used)) return;
-  }
-
-  const ok = confirm(
-    "確定要把這筆歷史紀錄還原到配置紀錄區嗎？\n\n" +
-    `型號：${model}\n` +
-    `組合：${historyRow.cells[1]?.innerText.trim() || "-"}\n` +
-    `固鎖：${fix}\n` +
-    `軸心：${axis}`
-  );
-
-  if (!ok) return;
-
-  const tbody = document.querySelector("#configTable tbody");
-
-  if (!tbody) {
-    alert("找不到配置紀錄區");
-    return;
-  }
-
-  const row = tbody.insertRow();
-
-  row.insertCell(0).innerText = model;
-  row.insertCell(1).innerText = layer;
-  row.insertCell(2).innerText = lockPart;
-
-  const mainCell = row.insertCell(3);
-  mainCell.innerText = mainPart;
-
-  if (transcendPart !== "-" && metalPart !== "-") {
-    mainCell.dataset.stockName = "";
-  } else {
-    mainCell.dataset.stockName = mainPart;
-  }
-
-  row.insertCell(4).innerText = transcendPart;
-  row.insertCell(5).innerText = metalPart;
-  row.insertCell(6).innerText = auxPart;
-  row.insertCell(7).innerText = fix;
-  row.insertCell(8).innerText = axis;
-  row.insertCell(9).innerHTML = getOperationButtons("config");
-
-  refreshSelectors();
-  saveData();
-};
 
 window.deleteHistoryRow = function (button) {
   if (!requireLogin()) return;
@@ -620,7 +459,7 @@ window.deleteHistoryRow = function (button) {
 
 /* ====== 刪除功能 ====== */
 
-window.deleteRow = async function (button) {
+window.deleteRow = function (button) {
   if (!requireLogin()) return;
 
   const row = button.parentElement.parentElement;
@@ -636,7 +475,9 @@ window.deleteRow = async function (button) {
     if (model || layer) {
       deleteName = `${model} ${layer}`.trim();
     }
-  } else if (tableId === "partTable") {
+  }
+
+  else if (tableId === "partTable") {
     const type = row.cells[0]?.innerText.trim() || "";
     const name = row.cells[1]?.innerText.trim() || "";
     const count = row.cells[2]?.innerText.trim() || "";
@@ -644,7 +485,9 @@ window.deleteRow = async function (button) {
     if (type || name) {
       deleteName = `${type}：${name}，數量 ${count}`;
     }
-  } else if (tableId === "configTable") {
+  }
+
+  else if (tableId === "configTable") {
     const model = row.cells[0]?.innerText.trim() || "";
     const layer = row.cells[1]?.innerText.trim() || "";
 
@@ -658,7 +501,7 @@ window.deleteRow = async function (button) {
   if (!ok) return;
 
   if (tableId === "configTable") {
-    const historyRecord = await askDeleteReasonForConfig(row);
+    const historyRecord = askDeleteReasonForConfig(row);
 
     if (historyRecord === null) return;
 
@@ -677,11 +520,9 @@ window.deleteRow = async function (button) {
 /* ====== 表格內修改功能 ====== */
 
 window.editRow = function (button, tableType) {
-  if (!requireLogin()) return;
-
+    if (!requireLogin()) return;
   const row = button.parentElement.parentElement;
-
-  if (row.dataset.editing === "true") return;
+    if (row.dataset.editing === "true") return;
 
   row.dataset.editing = "true";
 
@@ -717,24 +558,32 @@ window.editRow = function (button, tableType) {
       `;
 
       row.cells[i].querySelector("select").value = currentType;
-    } else if (tableType === "part" && i === 2) {
+    }
+
+    else if (tableType === "part" && i === 2) {
       const currentText = row.cells[i].innerText.trim();
 
       row.cells[i].innerHTML = `
         <input type="number" min="1" step="1" value="${escapeHtml(currentText)}">
       `;
-    } else if (tableType === "config" && i === 0) {
+    }
+
+    else if (tableType === "config" && i === 0) {
       const currentText = row.cells[i].innerText.trim();
 
       row.cells[i].innerHTML = `
         <input type="text" value="${escapeHtml(currentText)}">
       `;
-    } else if (tableType === "config" && configEditColumnMap[i]) {
+    }
+
+    else if (tableType === "config" && configEditColumnMap[i]) {
       const type = configEditColumnMap[i];
       const currentText = row.cells[i].innerText.trim();
 
       row.cells[i].innerHTML = buildConfigEditSelect(type, currentText, row);
-    } else {
+    }
+
+    else {
       const currentText = row.cells[i].innerText.trim();
 
       row.cells[i].innerHTML = `
@@ -748,7 +597,7 @@ window.editRow = function (button, tableType) {
 
 window.saveEditRow = function (button, tableType) {
   if (!requireLogin()) return;
-
+  
   if (tableType === "config") {
     saveConfigEditRow(button);
     return;
@@ -792,9 +641,9 @@ window.saveEditRow = function (button, tableType) {
 
     newValues[2] = String(partCount);
   }
-
+  
   if (tableType === "beyblade") {
-    newValues[0] = normalizeModel(newValues[0]);
+  newValues[0] = normalizeModel(newValues[0]);
   }
 
   for (let i = 0; i < lastIndex; i++) {
@@ -1059,8 +908,7 @@ function getEditCellValue(row, index) {
 
   return row.cells[index].innerText.trim();
 }
-
-/* ====== 儲存資料：存到登入者自己的 Firestore ====== */
+/* ====== 儲存資料：改存到登入者自己的 Firestore ====== */
 
 function getTableData(tableId, hasStockName = false) {
   const rows = document.querySelectorAll(`#${tableId} tbody tr`);
@@ -1086,6 +934,18 @@ function getTableData(tableId, hasStockName = false) {
   return data;
 }
 
+function collectCurrentData() {
+  sortBeybladeTable();
+
+  return {
+    beybladeTable: getTableData("beybladeTable", true),
+    partTable: getTableData("partTable", false),
+    configTable: getTableData("configTable", true),
+    historyTable: getHistoryData(),
+    updatedAt: Date.now()
+  };
+}
+
 function getHistoryData() {
   const rows = document.querySelectorAll("#historyTable tbody tr");
   const data = [];
@@ -1106,30 +966,7 @@ function getHistoryData() {
   return data;
 }
 
-function collectCurrentData() {
-  sortBeybladeTable();
-
-  return {
-    beybladeTable: getTableData("beybladeTable", true),
-    partTable: getTableData("partTable", false),
-    configTable: getTableData("configTable", true),
-    historyTable: getHistoryData(),
-    updatedAt: Date.now()
-  };
-}
-
-async function saveData() {
-  if (isApplyingRemoteData) return;
-
-  const userDocRef = getUserDocRef();
-
-  if (!userDocRef) {
-    console.log("尚未登入，暫不儲存");
-    setSyncStatus("尚未登入，資料不會儲存到雲端", "muted");
-    return;
-  }
-
-  const data = collectCurrentData();
+    const data = collectCurrentData();
 
   try {
     setSyncStatus("儲存中...", "saving");
@@ -1148,8 +985,6 @@ async function saveData() {
 
 function createBeybladeRow(cells, mainStockName) {
   const tbody = document.querySelector("#beybladeTable tbody");
-  if (!tbody) return;
-
   const row = tbody.insertRow();
 
   cells.forEach((text, index) => {
@@ -1166,8 +1001,6 @@ function createBeybladeRow(cells, mainStockName) {
 
 function createPartRow(cells) {
   const tbody = document.querySelector("#partTable tbody");
-  if (!tbody) return;
-
   const row = tbody.insertRow();
 
   cells.forEach((text, index) => {
@@ -1179,8 +1012,6 @@ function createPartRow(cells) {
 
 function createConfigRow(cells, mainStockName) {
   const tbody = document.querySelector("#configTable tbody");
-  if (!tbody) return;
-
   const row = tbody.insertRow();
 
   cells.forEach((text, index) => {
@@ -1196,14 +1027,11 @@ function createConfigRow(cells, mainStockName) {
 }
 
 function clearAllTables() {
-  const beybladeBody = document.querySelector("#beybladeTable tbody");
-  const partBody = document.querySelector("#partTable tbody");
-  const configBody = document.querySelector("#configTable tbody");
-  const historyBody = document.querySelector("#historyTable tbody");
+  document.querySelector("#beybladeTable tbody").innerHTML = "";
+  document.querySelector("#partTable tbody").innerHTML = "";
+  document.querySelector("#configTable tbody").innerHTML = "";
 
-  if (beybladeBody) beybladeBody.innerHTML = "";
-  if (partBody) partBody.innerHTML = "";
-  if (configBody) configBody.innerHTML = "";
+  const historyBody = document.querySelector("#historyTable tbody");
   if (historyBody) historyBody.innerHTML = "";
 }
 
@@ -1229,16 +1057,15 @@ function applyDataToTables(data) {
       createPartRow(item.cells);
     });
   }
+    if (data.historyTable) {
+    data.historyTable.forEach(item => {
+      createHistoryRow(item);
+    });
+  }
 
   if (data.configTable) {
     data.configTable.forEach(item => {
       createConfigRow(item.cells, item.mainStockName);
-    });
-  }
-
-  if (data.historyTable) {
-    data.historyTable.forEach(item => {
-      createHistoryRow(item);
     });
   }
 
@@ -1301,13 +1128,13 @@ async function migrateOldDataToCurrentUser() {
   if (!ok) return;
 
   try {
-    setSyncStatus("正在讀取舊資料...", "login");
+    setSyncStatus("正在讀取舊資料...");
 
     const oldSnap = await get(ref(oldDatabase, OLD_DB_PATH));
 
     if (!oldSnap.exists()) {
       alert("找不到舊資料：" + OLD_DB_PATH);
-      setSyncStatus("找不到舊資料", "error");
+      setSyncStatus("找不到舊資料");
       return;
     }
 
@@ -1322,21 +1149,20 @@ async function migrateOldDataToCurrentUser() {
       migratedAt: Date.now(),
       updatedAt: Date.now()
     });
-
+    
     alert("舊資料匯入成功");
-    setSyncStatus("舊資料已匯入到你的 Google 帳號", "saved");
+    setSyncStatus("舊資料已匯入到你的 Google 帳號");
   } catch (error) {
     console.error("匯入失敗：", error);
     alert("匯入失敗：" + error.message);
-    setSyncStatus("匯入失敗", "error");
+    setSyncStatus("匯入失敗");
   }
 }
-
 /* ====== 第一區：新增陀螺配置 ====== */
 
 window.addRow = function () {
   if (!requireLogin()) return;
-
+  
   const tbody = document.querySelector("#beybladeTable tbody");
 
   if (!tbody) return;
@@ -1441,7 +1267,7 @@ window.addRow = function () {
 
 window.addPart = function () {
   if (!requireLogin()) return;
-
+  
   const type = document.getElementById("partType").value;
   const nameInput = document.getElementById("partName");
   const countInput = document.getElementById("partCount");
@@ -1591,12 +1417,11 @@ function checkStock(type, name, total, used) {
 
   return true;
 }
-
 /* ====== 第三區：新增配置紀錄 ====== */
 
 window.addConfig = function () {
   if (!requireLogin()) return;
-
+  
   const modelInput = document.getElementById("confModel");
   const model = normalizeModel(modelInput.value.trim());
 
@@ -1814,7 +1639,6 @@ async function logoutGoogle() {
     alert("登出失敗：" + error.message);
   }
 }
-
 /* ====== 初始化 ====== */
 
 document.addEventListener("DOMContentLoaded", function () {
