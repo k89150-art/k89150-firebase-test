@@ -373,21 +373,22 @@ function buildHistoryRecordFromConfigValues(data) {
 }
 
 function createHistoryRow(record) {
-  const tbody = document.querySelector("#historyTable tbody");
-  if (!tbody) return;
+const tbody = document.querySelector("#historyTable tbody");
+if (!tbody) return;
 
-  const row = tbody.insertRow();
+const row = tbody.insertRow();
 
-  row.dataset.comboKey = record.comboKey || "";
+row.dataset.comboKey = record.comboKey || "";
 
-  row.insertCell(0).innerText = record.model || "-";
-  row.insertCell(1).innerText = record.combo || "-";
-  row.insertCell(2).innerText = record.fix || "-";
-  row.insertCell(3).innerText = record.axis || "-";
-  row.insertCell(4).innerText = record.result || "-";
-  row.insertCell(5).innerText = record.note || "-";
-  row.insertCell(6).innerText = record.date || "-";
-  row.insertCell(7).innerHTML = `<button onclick="deleteHistoryRow(this)">刪除</button>`;
+row.insertCell(0).innerText = record.model || "-";
+row.insertCell(1).innerText = record.combo || "-";
+row.insertCell(2).innerText = record.fix || "-";
+row.insertCell(3).innerText = record.axis || "-";
+row.insertCell(4).innerText = record.result || "-";
+row.insertCell(5).innerText = record.note || "-";
+row.insertCell(6).innerText = record.date || "-";
+row.insertCell(7).innerHTML = `     <button onclick="restoreHistoryRow(this)">還原</button>     <button onclick="deleteHistoryRow(this)">刪除</button>
+  `;
 }
 
 function findHistoryByComboKey(comboKey) {
@@ -413,59 +414,134 @@ function findHistoryByComboKey(comboKey) {
   return null;
 }
 
-window.deleteRow = async function (button) {
-  if (!requireLogin()) return;
+function askDeleteReasonForConfig(row) {
+return new Promise(resolve => {
+const oldOverlay = document.getElementById("deleteReasonOverlay");
+if (oldOverlay) oldOverlay.remove();
 
-  const row = button.parentElement.parentElement;
-  const table = row.closest("table");
-  const tableId = table ? table.id : "";
+```
+const overlay = document.createElement("div");
+overlay.id = "deleteReasonOverlay";
 
-  let deleteName = "這筆資料";
+overlay.style.position = "fixed";
+overlay.style.left = "0";
+overlay.style.top = "0";
+overlay.style.right = "0";
+overlay.style.bottom = "0";
+overlay.style.width = "100vw";
+overlay.style.height = "100dvh";
+overlay.style.background = "rgba(0, 0, 0, 0.78)";
+overlay.style.zIndex = "2147483647";
+overlay.style.display = "flex";
+overlay.style.alignItems = "center";
+overlay.style.justifyContent = "center";
+overlay.style.padding = "16px";
+overlay.style.boxSizing = "border-box";
 
-  if (tableId === "beybladeTable") {
-    const model = row.cells[0]?.innerText.trim() || "";
-    const layer = row.cells[1]?.innerText.trim() || "";
+overlay.innerHTML = `
+  <div style="
+    width:420px;
+    max-width:100%;
+    background:#1b1b1b;
+    color:#ffffff;
+    border:1px solid #3a3a3a;
+    border-radius:14px;
+    padding:16px;
+    box-sizing:border-box;
+    box-shadow:0 12px 32px rgba(0,0,0,0.65);
+    font-family:Arial, 'Microsoft JhengHei', sans-serif;
+  ">
+    <h4 style="margin:0 0 12px 0;font-size:18px;color:#ffffff;">
+      刪除配置紀錄
+    </h4>
 
-    if (model || layer) {
-      deleteName = `${model} ${layer}`.trim();
-    }
-  } else if (tableId === "partTable") {
-    const type = row.cells[0]?.innerText.trim() || "";
-    const name = row.cells[1]?.innerText.trim() || "";
-    const count = row.cells[2]?.innerText.trim() || "";
+    <div style="margin-bottom:12px;color:#dcdcdc;font-size:14px;line-height:1.5;">
+      請選擇這個配置拆掉的原因
+    </div>
 
-    if (type || name) {
-      deleteName = `${type}：${name}，數量 ${count}`;
-    }
-  } else if (tableId === "configTable") {
-    const model = row.cells[0]?.innerText.trim() || "";
-    const layer = row.cells[1]?.innerText.trim() || "";
+    <label style="display:block;margin-bottom:6px;color:#dcdcdc;font-size:14px;">
+      原因
+    </label>
 
-    if (model || layer) {
-      deleteName = `${model} ${layer}`.trim();
-    }
-  }
+    <select id="deleteReasonSelect" style="
+      width:100%;
+      margin-bottom:12px;
+      background:#242424;
+      color:#ffffff;
+      border:1px solid #444;
+      border-radius:7px;
+      padding:9px 10px;
+      box-sizing:border-box;
+      font-size:14px;
+    ">
+      <option value="不好用">不好用</option>
+      <option value="好用，暫時拆掉">好用，但暫時拆掉測其他組合</option>
+      <option value="普通 / 無感">普通 / 無感</option>
+      <option value="打錯，不記錄">打錯，不記錄</option>
+    </select>
 
-  const ok = confirm(`確定要刪除「${deleteName}」嗎？`);
+    <label style="display:block;margin-bottom:6px;color:#dcdcdc;font-size:14px;">
+      備註
+    </label>
 
-  if (!ok) return;
+    <textarea
+      id="deleteReasonNote"
+      placeholder="例如：太容易爆、持久不夠、攻擊不穩。可不填。"
+      style="
+        width:100%;
+        min-height:80px;
+        resize:vertical;
+        margin-bottom:14px;
+        background:#242424;
+        color:#ffffff;
+        border:1px solid #444;
+        border-radius:7px;
+        padding:9px 10px;
+        box-sizing:border-box;
+        font-size:14px;
+      "
+    ></textarea>
 
-  if (tableId === "configTable") {
-    const historyRecord = await askDeleteReasonForConfig(row);
+    <div style="display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;">
+      <button type="button" id="cancelDeleteReasonBtn">取消刪除</button>
+      <button type="button" id="confirmDeleteReasonBtn">確認刪除</button>
+    </div>
+  </div>
+`;
 
-    if (historyRecord === null) return;
+document.body.appendChild(overlay);
+document.body.style.overflow = "hidden";
 
-    if (historyRecord) {
-      createHistoryRow(historyRecord);
-    }
-  }
+const reasonSelect = overlay.querySelector("#deleteReasonSelect");
+const noteInput = overlay.querySelector("#deleteReasonNote");
+const cancelBtn = overlay.querySelector("#cancelDeleteReasonBtn");
+const confirmBtn = overlay.querySelector("#confirmDeleteReasonBtn");
 
-  row.remove();
+function closeOverlay(value) {
+  overlay.remove();
+  document.body.style.overflow = "";
+  resolve(value);
+}
 
-  sortBeybladeTable();
-  refreshSelectors();
-  saveData();
+cancelBtn.onclick = () => {
+  closeOverlay(null);
 };
+
+confirmBtn.onclick = () => {
+  const reason = reasonSelect.value;
+  const note = noteInput.value.trim();
+
+  if (reason === "打錯，不記錄") {
+    closeOverlay(false);
+    return;
+  }
+
+  closeOverlay(buildHistoryRecordFromConfigRow(row, reason, note));
+};
+
+});
+}
+
 
 window.deleteHistoryRow = function (button) {
   if (!requireLogin()) return;
@@ -481,57 +557,61 @@ window.deleteHistoryRow = function (button) {
 /* ====== 刪除功能 ====== */
 
 window.deleteRow = async function (button) {
-  if (!requireLogin()) return;
+if (!requireLogin()) return;
 
-  const row = button.parentElement.parentElement;
-  const table = row.closest("table");
-  const tableId = table ? table.id : "";
+const row = button.parentElement.parentElement;
+const table = row.closest("table");
+const tableId = table ? table.id : "";
 
-  let deleteName = "這筆資料";
+let deleteName = "這筆資料";
 
-  if (tableId === "beybladeTable") {
-    const model = row.cells[0]?.innerText.trim() || "";
-    const layer = row.cells[1]?.innerText.trim() || "";
+if (tableId === "beybladeTable") {
+const model = row.cells[0]?.innerText.trim() || "";
+const layer = row.cells[1]?.innerText.trim() || "";
 
-    if (model || layer) {
-      deleteName = `${model} ${layer}`.trim();
-    }
-  } else if (tableId === "partTable") {
-    const type = row.cells[0]?.innerText.trim() || "";
-    const name = row.cells[1]?.innerText.trim() || "";
-    const count = row.cells[2]?.innerText.trim() || "";
+if (model || layer) {
+  deleteName = `${model} ${layer}`.trim();
+}
 
-    if (type || name) {
-      deleteName = `${type}：${name}，數量 ${count}`;
-    }
-  } else if (tableId === "configTable") {
-    const model = row.cells[0]?.innerText.trim() || "";
-    const layer = row.cells[1]?.innerText.trim() || "";
+} else if (tableId === "partTable") {
+const type = row.cells[0]?.innerText.trim() || "";
+const name = row.cells[1]?.innerText.trim() || "";
+const count = row.cells[2]?.innerText.trim() || "";
 
-    if (model || layer) {
-      deleteName = `${model} ${layer}`.trim();
-    }
-  }
+if (type || name) {
+  deleteName = `${type}：${name}，數量 ${count}`;
+}
 
-  const ok = confirm(`確定要刪除「${deleteName}」嗎？`);
+} else if (tableId === "configTable") {
+const model = row.cells[0]?.innerText.trim() || "";
+const layer = row.cells[1]?.innerText.trim() || "";
 
-  if (!ok) return;
+if (model || layer) {
+  deleteName = `${model} ${layer}`.trim();
+}
 
-  if (tableId === "configTable") {
-    const historyRecord = await askDeleteReasonForConfig(row);
+}
 
-    if (historyRecord === null) return;
+const ok = confirm(`確定要刪除「${deleteName}」嗎？`);
 
-    if (historyRecord) {
-      createHistoryRow(historyRecord);
-    }
-  }
+if (!ok) return;
 
-  row.remove();
+if (tableId === "configTable") {
+const historyRecord = await askDeleteReasonForConfig(row);
 
-  sortBeybladeTable();
-  refreshSelectors();
-  saveData();
+if (historyRecord === null) return;
+
+if (historyRecord) {
+  createHistoryRow(historyRecord);
+}
+
+}
+
+row.remove();
+
+sortBeybladeTable();
+refreshSelectors();
+saveData();
 };
 
 /* ====== 表格內修改功能 ====== */
@@ -983,33 +1063,20 @@ function getHistoryData() {
   return data;
 }
 
-async function saveData() {
-if (isApplyingRemoteData) return;
+    const data = collectCurrentData();
 
-const userDocRef = getUserDocRef();
+  try {
+    setSyncStatus("儲存中...", "saving");
 
-if (!userDocRef) {
-console.log("尚未登入，暫不儲存");
-setSyncStatus("尚未登入，資料不會儲存到雲端", "muted");
-return;
+    await setDoc(userDocRef, data);
+
+    setSyncStatus("已儲存", "saved");
+  } catch (error) {
+    console.error("Firestore 儲存失敗：", error);
+    alert("Firestore 儲存失敗：" + error.message);
+    setSyncStatus("儲存失敗", "error");
+  }
 }
-
-const data = collectCurrentData();
-
-try {
-setSyncStatus("儲存中...", "saving");
-
-await setDoc(userDocRef, data);
-
-setSyncStatus("已儲存", "saved");
-
-} catch (error) {
-console.error("Firestore 儲存失敗：", error);
-alert("Firestore 儲存失敗：" + error.message);
-setSyncStatus("儲存失敗", "error");
-}
-}
-
 
 /* ====== 載入資料 ====== */
 
