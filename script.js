@@ -460,61 +460,57 @@ window.deleteHistoryRow = function (button) {
 /* ====== 刪除功能 ====== */
 
 window.deleteRow = function (button) {
-  if (!requireLogin()) return;
+if (!requireLogin()) return;
 
-  const row = button.parentElement.parentElement;
-  const table = row.closest("table");
-  const tableId = table ? table.id : "";
+const row = button.parentElement.parentElement;
+const table = row.closest("table");
+const tableId = table ? table.id : "";
 
-  let deleteName = "這筆資料";
+let deleteName = "這筆資料";
 
-  if (tableId === "beybladeTable") {
-    const model = row.cells[0]?.innerText.trim() || "";
-    const layer = row.cells[1]?.innerText.trim() || "";
+if (tableId === "beybladeTable") {
+const model = row.cells[0]?.innerText.trim() || "";
+const layer = row.cells[1]?.innerText.trim() || "";
 
-    if (model || layer) {
-      deleteName = `${model} ${layer}`.trim();
-    }
-  }
+if (model || layer) {
+  deleteName = `${model} ${layer}`.trim();
+}
 
-  else if (tableId === "partTable") {
-    const type = row.cells[0]?.innerText.trim() || "";
-    const name = row.cells[1]?.innerText.trim() || "";
-    const count = row.cells[2]?.innerText.trim() || "";
+const ok = confirm(`確定要刪除「${deleteName}」嗎？`);
+if (!ok) return;
 
-    if (type || name) {
-      deleteName = `${type}：${name}，數量 ${count}`;
-    }
-  }
+}
 
-  else if (tableId === "configTable") {
-    const model = row.cells[0]?.innerText.trim() || "";
-    const layer = row.cells[1]?.innerText.trim() || "";
+else if (tableId === "partTable") {
+const type = row.cells[0]?.innerText.trim() || "";
+const name = row.cells[1]?.innerText.trim() || "";
+const count = row.cells[2]?.innerText.trim() || "";
 
-    if (model || layer) {
-      deleteName = `${model} ${layer}`.trim();
-    }
-  }
+if (type || name) {
+  deleteName = `${type}：${name}，數量 ${count}`;
+}
 
-  const ok = confirm(`確定要刪除「${deleteName}」嗎？`);
+const ok = confirm(`確定要刪除「${deleteName}」嗎？`);
+if (!ok) return;
 
-  if (!ok) return;
+}
 
-  if (tableId === "configTable") {
-    const historyRecord = askDeleteReasonForConfig(row);
+else if (tableId === "configTable") {
+const historyRecord = askDeleteReasonForConfig(row);
 
-    if (historyRecord === null) return;
+if (historyRecord === null) return;
 
-    if (historyRecord) {
-      createHistoryRow(historyRecord);
-    }
-  }
+if (historyRecord) {
+  createHistoryRow(historyRecord);
+}
 
-  row.remove();
+}
 
-  sortBeybladeTable();
-  refreshSelectors();
-  saveData();
+row.remove();
+
+sortBeybladeTable();
+refreshSelectors();
+saveData();
 };
 
 /* ====== 表格內修改功能 ====== */
