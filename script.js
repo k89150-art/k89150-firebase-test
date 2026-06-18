@@ -413,38 +413,59 @@ function findHistoryByComboKey(comboKey) {
   return null;
 }
 
-function askDeleteReasonForConfig(row) {
-  const choice = prompt(
-    "這個配置要移除，請選擇原因：\n\n" +
-    "1：不好用\n" +
-    "2：好用，但暫時拆掉測其他組合\n" +
-    "3：普通 / 無感\n" +
-    "4：打錯，不記錄\n\n" +
-    "請輸入 1、2、3 或 4"
-  );
+window.deleteRow = async function (button) {
+  if (!requireLogin()) return;
 
-  if (choice === null) return null;
+  const row = button.parentElement.parentElement;
+  const table = row.closest("table");
+  const tableId = table ? table.id : "";
 
-  const reasonMap = {
-    "1": "不好用",
-    "2": "好用，暫時拆掉",
-    "3": "普通 / 無感",
-    "4": "打錯，不記錄"
-  };
+  let deleteName = "這筆資料";
 
-  if (!reasonMap[choice]) {
-    alert("請輸入 1、2、3 或 4");
-    return null;
+  if (tableId === "beybladeTable") {
+    const model = row.cells[0]?.innerText.trim() || "";
+    const layer = row.cells[1]?.innerText.trim() || "";
+
+    if (model || layer) {
+      deleteName = `${model} ${layer}`.trim();
+    }
+  } else if (tableId === "partTable") {
+    const type = row.cells[0]?.innerText.trim() || "";
+    const name = row.cells[1]?.innerText.trim() || "";
+    const count = row.cells[2]?.innerText.trim() || "";
+
+    if (type || name) {
+      deleteName = `${type}：${name}，數量 ${count}`;
+    }
+  } else if (tableId === "configTable") {
+    const model = row.cells[0]?.innerText.trim() || "";
+    const layer = row.cells[1]?.innerText.trim() || "";
+
+    if (model || layer) {
+      deleteName = `${model} ${layer}`.trim();
+    }
   }
 
-  if (choice === "4") {
-    return false;
+  const ok = confirm(`確定要刪除「${deleteName}」嗎？`);
+
+  if (!ok) return;
+
+  if (tableId === "configTable") {
+    const historyRecord = await askDeleteReasonForConfig(row);
+
+    if (historyRecord === null) return;
+
+    if (historyRecord) {
+      createHistoryRow(historyRecord);
+    }
   }
 
-  const note = prompt("可以輸入備註，例如：太容易爆、持久不夠、攻擊不穩。沒有要寫可以空白。", "");
+  row.remove();
 
-  return buildHistoryRecordFromConfigRow(row, reasonMap[choice], note || "");
-}
+  sortBeybladeTable();
+  refreshSelectors();
+  saveData();
+};
 
 window.deleteHistoryRow = function (button) {
   if (!requireLogin()) return;
