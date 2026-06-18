@@ -418,129 +418,44 @@ function findHistoryByComboKey(comboKey) {
 ```js
 function askDeleteReasonForConfig(row) {
   return new Promise(resolve => {
-    const oldModal = document.getElementById("deleteReasonOverlay");
-    if (oldModal) oldModal.remove();
+    const choice = prompt(
+      "這個配置要移除，請選擇原因：\n\n" +
+      "1：不好用\n" +
+      "2：好用，但暫時拆掉測其他組合\n" +
+      "3：普通 / 無感\n" +
+      "4：打錯，不記錄\n\n" +
+      "請輸入 1、2、3 或 4"
+    );
 
-    const overlay = document.createElement("div");
-    overlay.id = "deleteReasonOverlay";
-
-    overlay.style.setProperty("position", "fixed", "important");
-    overlay.style.setProperty("left", "0", "important");
-    overlay.style.setProperty("top", "0", "important");
-    overlay.style.setProperty("right", "0", "important");
-    overlay.style.setProperty("bottom", "0", "important");
-    overlay.style.setProperty("width", "100vw", "important");
-    overlay.style.setProperty("height", "100dvh", "important");
-    overlay.style.setProperty("background", "rgba(0, 0, 0, 0.78)", "important");
-    overlay.style.setProperty("z-index", "2147483647", "important");
-    overlay.style.setProperty("display", "flex", "important");
-    overlay.style.setProperty("align-items", "center", "important");
-    overlay.style.setProperty("justify-content", "center", "important");
-    overlay.style.setProperty("padding", "16px", "important");
-    overlay.style.setProperty("box-sizing", "border-box", "important");
-
-    const card = document.createElement("div");
-
-    card.style.setProperty("width", "420px", "important");
-    card.style.setProperty("max-width", "100%", "important");
-    card.style.setProperty("background", "#1b1b1b", "important");
-    card.style.setProperty("color", "#ffffff", "important");
-    card.style.setProperty("border", "1px solid #3a3a3a", "important");
-    card.style.setProperty("border-radius", "14px", "important");
-    card.style.setProperty("padding", "16px", "important");
-    card.style.setProperty("box-sizing", "border-box", "important");
-    card.style.setProperty("box-shadow", "0 12px 32px rgba(0, 0, 0, 0.65)", "important");
-    card.style.setProperty("font-family", "Arial, 'Microsoft JhengHei', sans-serif", "important");
-
-    card.innerHTML = `
-      <h4 style="margin:0 0 12px 0;font-size:18px;color:#ffffff;">
-        刪除配置紀錄
-      </h4>
-
-      <div style="margin-bottom:12px;color:#dcdcdc;font-size:14px;line-height:1.5;">
-        請選擇這個配置拆掉的原因
-      </div>
-
-      <label style="display:block;margin-bottom:6px;color:#dcdcdc;font-size:14px;">
-        原因
-      </label>
-
-      <select id="deleteReasonSelect" style="
-        width:100%;
-        margin-bottom:12px;
-        background:#242424;
-        color:#ffffff;
-        border:1px solid #444;
-        border-radius:7px;
-        padding:9px 10px;
-        box-sizing:border-box;
-        font-size:14px;
-      ">
-        <option value="不好用">不好用</option>
-        <option value="好用，暫時拆掉">好用，但暫時拆掉測其他組合</option>
-        <option value="普通 / 無感">普通 / 無感</option>
-        <option value="打錯，不記錄">打錯，不記錄</option>
-      </select>
-
-      <label style="display:block;margin-bottom:6px;color:#dcdcdc;font-size:14px;">
-        備註
-      </label>
-
-      <textarea
-        id="deleteReasonNote"
-        placeholder="例如：太容易爆、持久不夠、攻擊不穩。可不填。"
-        style="
-          width:100%;
-          min-height:80px;
-          resize:vertical;
-          margin-bottom:14px;
-          background:#242424;
-          color:#ffffff;
-          border:1px solid #444;
-          border-radius:7px;
-          padding:9px 10px;
-          box-sizing:border-box;
-          font-size:14px;
-        "
-      ></textarea>
-
-      <div style="display:flex;gap:8px;justify-content:flex-end;">
-        <button type="button" id="cancelDeleteReasonBtn">取消刪除</button>
-        <button type="button" id="confirmDeleteReasonBtn">確認刪除</button>
-      </div>
-    `;
-
-    overlay.appendChild(card);
-    document.documentElement.appendChild(overlay);
-
-    document.body.style.overflow = "hidden";
-
-    const reasonSelect = card.querySelector("#deleteReasonSelect");
-    const noteInput = card.querySelector("#deleteReasonNote");
-    const cancelBtn = card.querySelector("#cancelDeleteReasonBtn");
-    const confirmBtn = card.querySelector("#confirmDeleteReasonBtn");
-
-    function closeModal(value) {
-      overlay.remove();
-      document.body.style.overflow = "";
-      resolve(value);
+    if (choice === null) {
+      resolve(null);
+      return;
     }
 
-    cancelBtn.addEventListener("click", () => {
-      closeModal(null);
-    });
+    const reasonMap = {
+      "1": "不好用",
+      "2": "好用，暫時拆掉",
+      "3": "普通 / 無感",
+      "4": "打錯，不記錄"
+    };
 
-    confirmBtn.addEventListener("click", () => {
-      const reason = reasonSelect.value;
-      const note = noteInput.value.trim();
+    if (!reasonMap[choice]) {
+      alert("請輸入 1、2、3 或 4");
+      resolve(null);
+      return;
+    }
 
-      if (reason === "打錯，不記錄") {
-        closeModal(false);
-        return;
-      }
+    if (choice === "4") {
+      resolve(false);
+      return;
+    }
 
-      closeModal(buildHistoryRecordFromConfigRow(row, reason, note));
-    });
+    const note = prompt(
+      "可以輸入備註，例如：太容易爆、持久不夠、攻擊不穩。\n\n沒有要寫可以空白。",
+      ""
+    );
+
+    resolve(buildHistoryRecordFromConfigRow(row, reasonMap[choice], note || ""));
   });
 }
 
