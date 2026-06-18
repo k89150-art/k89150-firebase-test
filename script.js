@@ -480,7 +480,7 @@ window.deleteHistoryRow = function (button) {
 
 /* ====== 刪除功能 ====== */
 
-window.deleteRow = function (button) {
+window.deleteRow = async function (button) {
   if (!requireLogin()) return;
 
   const row = button.parentElement.parentElement;
@@ -496,9 +496,7 @@ window.deleteRow = function (button) {
     if (model || layer) {
       deleteName = `${model} ${layer}`.trim();
     }
-  }
-
-  else if (tableId === "partTable") {
+  } else if (tableId === "partTable") {
     const type = row.cells[0]?.innerText.trim() || "";
     const name = row.cells[1]?.innerText.trim() || "";
     const count = row.cells[2]?.innerText.trim() || "";
@@ -506,9 +504,7 @@ window.deleteRow = function (button) {
     if (type || name) {
       deleteName = `${type}：${name}，數量 ${count}`;
     }
-  }
-
-  else if (tableId === "configTable") {
+  } else if (tableId === "configTable") {
     const model = row.cells[0]?.innerText.trim() || "";
     const layer = row.cells[1]?.innerText.trim() || "";
 
@@ -522,7 +518,7 @@ window.deleteRow = function (button) {
   if (!ok) return;
 
   if (tableId === "configTable") {
-    const historyRecord = askDeleteReasonForConfig(row);
+    const historyRecord = await askDeleteReasonForConfig(row);
 
     if (historyRecord === null) return;
 
