@@ -131,6 +131,8 @@ const configEditColumnMap = {
   8: "軸心"
 };
 
+/* ====== 型號格式整理 ====== */
+
 function normalizeModel(model) {
   const text = String(model || "").trim().replace(/\s+/g, " ");
 
@@ -177,6 +179,8 @@ function getSeriesFromModel(model) {
 
   return "OTHER";
 }
+
+/* ====== 第一區排序：UX → BX → CX → 其他 ====== */
 
 function sortBeybladeTable() {
   const tbody = document.querySelector("#beybladeTable tbody");
@@ -382,7 +386,10 @@ function createHistoryRow(record) {
   row.insertCell(4).innerText = record.result || "-";
   row.insertCell(5).innerText = record.note || "-";
   row.insertCell(6).innerText = record.date || "-";
-  row.insertCell(7).innerHTML = `<button onclick="deleteHistoryRow(this)">刪除</button>`;
+  row.insertCell(7).innerHTML = `
+    <button onclick="restoreHistoryRow(this)">還原</button>
+    <button onclick="deleteHistoryRow(this)">刪除</button>
+  `;
 }
 
 function findHistoryByComboKey(comboKey) {
@@ -409,37 +416,154 @@ function findHistoryByComboKey(comboKey) {
 }
 
 function askDeleteReasonForConfig(row) {
-  const choice = prompt(
-    "這個配置要移除，請選擇原因：\n\n" +
-    "1：不好用\n" +
-    "2：好用，但暫時拆掉測其他組合\n" +
-    "3：普通 / 無感\n" +
-    "4：打錯，不記錄\n\n" +
-    "請輸入 1、2、3 或 4"
+  return new Promise(resolve => {
+    const backdrop = document.createElement("div");
+    backdrop.className = "modal-backdrop";
+
+    backdrop.innerHTML = `
+      <div class="modal-card">
+        <h4>刪除配置紀錄</h4>
+
+        <label>請選擇拆掉原因</label>
+        <select id="deleteReasonSelect">
+          <option value="不好用">不好用</option>
+          <option value="好用，暫時拆掉">好用，但暫時拆掉測其他組合</option>
+          <option value="普通 / 無感">普通 / 無感</option>
+          <option value="打錯，不記錄">打錯，不記錄</option>
+        </select>
+
+        <label>備註</label>
+        <textarea id="deleteReasonNote" placeholder="例如：太容易爆、持久不夠、攻擊不穩。可不填。"></textarea>
+
+        <div class="modal-actions">
+          <button type="button" id="cancelDeleteReasonBtn">取消刪除</button>
+          <button type="button" id="confirmDeleteReasonBtn">確認刪除</button>
+        </div>
+      </div>
+    `;
+
+    document.body.appendChild(backdrop);
+
+    const reasonSelect = backdrop.querySelector("#deleteReasonSelect");
+    const noteInput = backdrop.querySelector("#deleteReasonNote");
+    const cancelBtn = backdrop.querySelector("#cancelDeleteReasonBtn");
+    const confirmBtn = backdrop.querySelector("#confirmDeleteReasonBtn");
+
+    cancelBtn.addEventListener("click", () => {
+      backdrop.remove();
+      resolve(null);
+    });
+
+    confirmBtn.addEventListener("click", () => {
+      const reason = reasonSelect.value;
+      const note = noteInput.value.trim();
+
+      backdrop.remove();
+
+      if (reason === "打錯，不記錄") {
+        resolve(false);
+        return;
+      }
+
+      resolve(buildHistoryRecordFromConfigRow(row, reason, note));
+    });
+  });
+}
+
+window.restoreHistoryRow = function (button) {
+  if (!requireLogin()) return;
+
+  const historyRow = button.parentElement.parentElement;
+  const comboKey = historyRow.dataset.comboKey || "";
+
+  if (!comboKey) {
+    alert("這筆歷史紀錄缺少組合資料，無法還原。");
+    return;
+  }
+
+  const values = comboKey.split("|");
+
+  while (values.length < 8) {
+    values.push("-");
+  }
+
+  const layer = normalizeComboValue(values[0]);
+  const lockPart = normalizeComboValue(values[1]);
+  const mainPart = normalizeComboValue(values[2]);
+  const transcendPart = normalizeComboValue(values[3]);
+  const metalPart = normalizeComboValue(values[4]);
+  const auxPart = normalizeComboValue(values[5]);
+  const fix = normalizeComboValue(values[6]);
+  const axis = normalizeComboValue(values[7]);
+
+  const model = normalizeModel(historyRow.cells[0]?.innerText.trim() || "");
+
+  const isCxCombo =
+    lockPart !== "-" ||
+    auxPart !== "-" ||
+    transcendPart !== "-" ||
+    metalPart !== "-";
+
+  const total = getTotalParts();
+  const used = getUsedParts();
+
+  const selectedParts = [
+    ["上蓋", isCxCombo ? "" : layer],
+    ["紋章鎖", lockPart === "-" ? "" : lockPart],
+    ["主要戰刃", mainPart.includes("/") || mainPart === "-" ? "" : mainPart],
+    ["超越戰刃", transcendPart === "-" ? "" : transcendPart],
+    ["金屬戰刃", metalPart === "-" ? "" : metalPart],
+    ["輔助戰刃", auxPart === "-" ? "" : auxPart],
+    ["固鎖", fix === "-" ? "" : fix],
+    ["軸心", axis === "-" ? "" : axis]
+  ];
+
+  for (const [type, name] of selectedParts) {
+    if (!checkStock(type, name, total, used)) return;
+  }
+
+  const ok = confirm(
+    "確定要把這筆歷史紀錄還原到配置紀錄區嗎？\n\n" +
+    `型號：${model}\n` +
+    `組合：${historyRow.cells[1]?.innerText.trim() || "-"}\n` +
+    `固鎖：${fix}\n` +
+    `軸心：${axis}`
   );
 
-  if (choice === null) return null;
+  if (!ok) return;
 
-  const reasonMap = {
-    "1": "不好用",
-    "2": "好用，暫時拆掉",
-    "3": "普通 / 無感",
-    "4": "打錯，不記錄"
-  };
+  const tbody = document.querySelector("#configTable tbody");
 
-  if (!reasonMap[choice]) {
-    alert("請輸入 1、2、3 或 4");
-    return null;
+  if (!tbody) {
+    alert("找不到配置紀錄區");
+    return;
   }
 
-  if (choice === "4") {
-    return false;
+  const row = tbody.insertRow();
+
+  row.insertCell(0).innerText = model;
+  row.insertCell(1).innerText = layer;
+  row.insertCell(2).innerText = lockPart;
+
+  const mainCell = row.insertCell(3);
+  mainCell.innerText = mainPart;
+
+  if (transcendPart !== "-" && metalPart !== "-") {
+    mainCell.dataset.stockName = "";
+  } else {
+    mainCell.dataset.stockName = mainPart;
   }
 
-  const note = prompt("可以輸入備註，例如：太容易爆、持久不夠、攻擊不穩。沒有要寫可以空白。", "");
+  row.insertCell(4).innerText = transcendPart;
+  row.insertCell(5).innerText = metalPart;
+  row.insertCell(6).innerText = auxPart;
+  row.insertCell(7).innerText = fix;
+  row.insertCell(8).innerText = axis;
+  row.insertCell(9).innerHTML = getOperationButtons("config");
 
-  return buildHistoryRecordFromConfigRow(row, reasonMap[choice], note || "");
-}
+  refreshSelectors();
+  saveData();
+};
 
 window.deleteHistoryRow = function (button) {
   if (!requireLogin()) return;
@@ -454,7 +578,7 @@ window.deleteHistoryRow = function (button) {
 
 /* ====== 刪除功能 ====== */
 
-window.deleteRow = function (button) {
+window.deleteRow = async function (button) {
   if (!requireLogin()) return;
 
   const row = button.parentElement.parentElement;
@@ -492,7 +616,7 @@ window.deleteRow = function (button) {
   if (!ok) return;
 
   if (tableId === "configTable") {
-    const historyRecord = askDeleteReasonForConfig(row);
+    const historyRecord = await askDeleteReasonForConfig(row);
 
     if (historyRecord === null) return;
 
