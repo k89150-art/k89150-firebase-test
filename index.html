@@ -8,6 +8,45 @@
 
   <link rel="stylesheet" href="style.css" />
   <style>
+    /* ====== 管理員面板 ====== */
+    #adminPanel {
+      margin-top: 14px;
+      padding-top: 14px;
+      border-top: 1px solid #333;
+    }
+    .admin-panel-inner {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .admin-label {
+      font-size: 13px;
+      font-weight: 700;
+      color: #ffcc66;
+      white-space: nowrap;
+    }
+    #adminUidInput {
+      flex: 1;
+      min-width: 180px;
+      font-size: 13px;
+    }
+    .admin-panel-inner button {
+      padding: 8px 14px;
+      font-size: 13px;
+      white-space: nowrap;
+    }
+    @media (max-width: 600px) {
+      .admin-panel-inner {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      #adminUidInput,
+      .admin-panel-inner button {
+        width: 100%;
+      }
+    }
+
     /* ====== 刪除配置對話框 ====== */
     @keyframes modalSlideUp {
       from { transform: translate(-50%, calc(-50% + 20px)); opacity: 0; }
@@ -115,6 +154,16 @@
     <div class="auth-actions">
       <button id="googleLoginBtn" class="primary-btn">使用 Google 登入</button>
       <button id="logoutBtn" class="danger-btn" style="display:none;">登出</button>
+    </div>
+  </div>
+
+  <!-- 管理員面板 -->
+  <div id="adminPanel" style="display:none;">
+    <div class="admin-panel-inner">
+      <span class="admin-label">🔑 管理員模式</span>
+      <input type="text" id="adminUidInput" placeholder="輸入使用者 UID">
+      <button onclick="adminViewUser()" class="primary-btn">檢視</button>
+      <button id="adminReturnBtn" onclick="adminViewSelf()" class="secondary-btn" style="display:none;">回到我的資料</button>
     </div>
   </div>
 
