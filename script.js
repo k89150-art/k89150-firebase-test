@@ -34,19 +34,36 @@ const auth = getAuth(newApp);
 const provider = new GoogleAuthProvider();
 const db = getFirestore(newApp);
 
+const ADMIN_UID = "SesDhvXG6MUT38YhqGl0N6lVgMz1";
+
 let currentUser = null;
+let viewingUserId = null;   // null = 看自己；有值 = 管理員在看別人
 let unsubscribeCloudData = null;
 let isApplyingRemoteData = false;
 
-function getUserDocRef() {
+function isAdmin() {
+  return currentUser && currentUser.uid === ADMIN_UID;
+}
+
+function isReadOnly() {
+  return viewingUserId !== null;
+}
+
+function getUserDocRef(targetUid) {
   if (!currentUser) return null;
-  return doc(db, "users", currentUser.uid, "appData", "main");
+  const uid = targetUid || viewingUserId || currentUser.uid;
+  return doc(db, "users", uid, "appData", "main");
 }
 
 function requireLogin() {
   if (!currentUser) {
     alert("請先使用 Google 登入，才能操作資料。");
     setSyncStatus("請先登入後再操作", "muted");
+    return false;
+  }
+
+  if (isReadOnly()) {
+    alert("目前是瀏覽模式，無法修改其他使用者的資料。");
     return false;
   }
 
@@ -259,6 +276,7 @@ function escapeHtml(text) {
 }
 
 function getOperationButtons(tableType) {
+  if (isReadOnly()) return "";
   return `
     <button onclick="editRow(this, '${tableType}')">修改</button>
     <button onclick="deleteRow(this)">刪除</button>
@@ -373,7 +391,7 @@ function createHistoryRow(record) {
   row.insertCell(4).innerText = record.result || "-";
   row.insertCell(5).innerText = record.note || "-";
   row.insertCell(6).innerText = record.date || "-";
-  row.insertCell(7).innerHTML =
+  row.insertCell(7).innerHTML = isReadOnly() ? "" :
     '<button onclick="restoreHistoryRow(this)">還原</button>' +
     '<button onclick="deleteHistoryRow(this)">刪除</button>';
 }
@@ -1642,19 +1660,75 @@ function updateAuthUI(user) {
   const logoutBtn = document.getElementById("logoutBtn");
   const userInfo = document.getElementById("userInfo");
   const userEmail = document.getElementById("userEmail");
+  const adminPanel = document.getElementById("adminPanel");
 
   if (user) {
     if (googleLoginBtn) googleLoginBtn.style.display = "none";
     if (logoutBtn) logoutBtn.style.display = "inline-block";
     if (userInfo) userInfo.style.display = "block";
     if (userEmail) userEmail.textContent = user.email || "";
+    if (adminPanel) adminPanel.style.display = isAdmin() ? "block" : "none";
   } else {
     if (googleLoginBtn) googleLoginBtn.style.display = "inline-block";
     if (logoutBtn) logoutBtn.style.display = "none";
     if (userInfo) userInfo.style.display = "none";
     if (userEmail) userEmail.textContent = "";
+    if (adminPanel) adminPanel.style.display = "none";
   }
 }
+
+/* ====== 管理員：切換檢視使用者 ====== */
+
+window.adminViewUser = async function () {
+  if (!isAdmin()) return;
+
+  const targetUid = document.getElementById("adminUidInput")?.value.trim();
+
+  if (!targetUid) {
+    alert("請輸入使用者 UID");
+    return;
+  }
+
+  if (targetUid === currentUser.uid) {
+    adminViewSelf();
+    return;
+  }
+
+  viewingUserId = targetUid;
+
+  setSyncStatus(`瀏覽模式：${targetUid}`, "login");
+
+  const returnBtn = document.getElementById("adminReturnBtn");
+  if (returnBtn) returnBtn.style.display = "inline-block";
+
+  if (unsubscribeCloudData) {
+    unsubscribeCloudData();
+    unsubscribeCloudData = null;
+  }
+
+  startCloudListener();
+};
+
+window.adminViewSelf = function () {
+  if (!isAdmin()) return;
+
+  viewingUserId = null;
+
+  const returnBtn = document.getElementById("adminReturnBtn");
+  if (returnBtn) returnBtn.style.display = "none";
+
+  const uidInput = document.getElementById("adminUidInput");
+  if (uidInput) uidInput.value = "";
+
+  setSyncStatus("已回到自己的資料", "saved");
+
+  if (unsubscribeCloudData) {
+    unsubscribeCloudData();
+    unsubscribeCloudData = null;
+  }
+
+  startCloudListener();
+};
 
 /* ====== Google 登入 / 登出 ====== */
 
