@@ -8,7 +8,9 @@ import {
 import {
   getFirestore,
   collectionGroup,
-  getDocs
+  doc,
+  getDocs,
+  setDoc
 } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-firestore.js";
 
 const firebaseConfig = {
@@ -62,6 +64,23 @@ function updateAdminView(user) {
 
   if (adminViewSection) adminViewSection.style.display = "none";
   clearAdminTable();
+}
+
+async function saveOwnerMetadata(user) {
+  if (!user) return;
+
+  try {
+    await setDoc(
+      doc(db, "users", user.uid, "appData", "main"),
+      {
+        ownerUid: user.uid,
+        ownerEmail: user.email || ""
+      },
+      { merge: true }
+    );
+  } catch (error) {
+    console.warn("使用者 owner 資訊補寫失敗：", error);
+  }
 }
 
 async function loadAllUserConfigsForAdmin() {
@@ -136,4 +155,7 @@ document.addEventListener("DOMContentLoaded", () => {
   updateAdminView(auth.currentUser);
 });
 
-onAuthStateChanged(auth, updateAdminView);
+onAuthStateChanged(auth, user => {
+  updateAdminView(user);
+  saveOwnerMetadata(user);
+});
