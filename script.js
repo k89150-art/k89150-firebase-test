@@ -374,6 +374,7 @@ function createHistoryRow(record) {
   row.insertCell(5).innerText = record.note || "-";
   row.insertCell(6).innerText = record.date || "-";
   row.insertCell(7).innerHTML =
+    '<button onclick="restoreHistoryRow(this)">還原</button>' +
     '<button onclick="deleteHistoryRow(this)">刪除</button>';
 }
 
@@ -448,6 +449,95 @@ function askDeleteReasonForConfig(row) {
     backdrop.addEventListener("click", onCancel);
   });
 }
+
+window.restoreHistoryRow = function (button) {
+  if (!requireLogin()) return;
+
+  const historyRow = button.parentElement.parentElement;
+  const comboKey = historyRow.dataset.comboKey || "";
+
+  if (!comboKey) {
+    alert("這筆歷史紀錄缺少組合資料，無法還原。");
+    return;
+  }
+
+  const parts = comboKey.split("|");
+
+  if (parts.length < 8) {
+    alert("這筆歷史紀錄格式不完整，無法還原。");
+    return;
+  }
+
+  const model = normalizeModel(historyRow.cells[0]?.innerText.trim() || "");
+  const layer = parts[0] || "-";
+  const lockPart = parts[1] || "-";
+  const mainPart = parts[2] || "-";
+  const transcendPart = parts[3] || "-";
+  const metalPart = parts[4] || "-";
+  const auxPart = parts[5] || "-";
+  const fix = parts[6] || "-";
+  const axis = parts[7] || "-";
+
+  if (!model) {
+    alert("這筆歷史紀錄缺少型號，無法還原。");
+    return;
+  }
+
+  const ok = confirm(
+    "確定要把這筆歷史紀錄還原到配置紀錄區嗎？\n\n" +
+    "型號：" + model + "\n" +
+    "組合：" + (historyRow.cells[1]?.innerText.trim() || "-") + "\n" +
+    "固鎖：" + fix + "\n" +
+    "軸心：" + axis
+  );
+
+  if (!ok) return;
+
+  const total = getTotalParts();
+  const used = getUsedParts();
+
+  const series = getSeriesFromModel(model);
+
+  const selectedParts = [
+    ["上蓋", series === "CX" ? "" : layer],
+    ["紋章鎖", lockPart === "-" ? "" : lockPart],
+    ["主要戰刃", mainPart.includes("/") ? "" : mainPart],
+    ["超越戰刃", transcendPart === "-" ? "" : transcendPart],
+    ["金屬戰刃", metalPart === "-" ? "" : metalPart],
+    ["輔助戰刃", auxPart === "-" ? "" : auxPart],
+    ["固鎖", fix === "-" ? "" : fix],
+    ["軸心", axis === "-" ? "" : axis]
+  ];
+
+  for (const [type, name] of selectedParts) {
+    if (!checkStock(type, name, total, used)) return;
+  }
+
+  const cells = [
+    model,
+    layer,
+    lockPart,
+    mainPart,
+    transcendPart,
+    metalPart,
+    auxPart,
+    fix,
+    axis
+  ];
+
+  const mainStockName =
+    transcendPart !== "-" && metalPart !== "-"
+      ? ""
+      : mainPart;
+
+  createConfigRow(cells, mainStockName);
+
+  historyRow.remove();
+
+  sortBeybladeTable();
+  refreshSelectors();
+  saveData();
+};
 
 window.deleteHistoryRow = function (button) {
   if (!requireLogin()) return;
