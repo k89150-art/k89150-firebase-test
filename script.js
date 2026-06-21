@@ -1,4 +1,4 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-app.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-app.js";
 
 import {
   getAuth,
@@ -6,21 +6,15 @@ import {
   signInWithPopup,
   signOut,
   onAuthStateChanged
-} from "https://www.gstatic.com/firebasejs/12.14.0/firebase-auth.js";
+} from "https://www.gstatic.com/firebasejs/11.2.0/firebase-auth.js";
 
 import {
   getFirestore,
   doc,
   setDoc,
-  getDoc,
   onSnapshot
-} from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
+} from "https://www.gstatic.com/firebasejs/11.2.0/firebase-firestore.js";
 
-import {
-  getDatabase,
-  ref,
-  get
-} from "https://www.gstatic.com/firebasejs/12.14.0/firebase-database.js";
 
 /*
   新 Firebase：Google 登入 + Firestore
@@ -34,34 +28,11 @@ const newFirebaseConfig = {
   appId: "1:488040360398:web:759698c16eb67e14f1639f"
 };
 
-/*
-  舊 Firebase：只用來匯入你原本已經記錄好的 Realtime Database 資料
-*/
-const oldFirebaseConfig = {
-  apiKey: "AIzaSyAi_TtnfCr5DOCIkxWIf2yTkBoH9MWTchA",
-  authDomain: "beyblade-wangbaboa.firebaseapp.com",
-  databaseURL: "https://beyblade-wangbaboa-default-rtdb.firebaseio.com",
-  projectId: "beyblade-wangbaboa",
-  storageBucket: "beyblade-wangbaboa.firebasestorage.app",
-  messagingSenderId: "258354745804",
-  appId: "1:258354745804:web:56c93832f752d064eacd69"
-};
-
-const newApp = initializeApp(newFirebaseConfig, "newApp");
-const oldApp = initializeApp(oldFirebaseConfig, "oldApp");
+const newApp = initializeApp(newFirebaseConfig);
 
 const auth = getAuth(newApp);
 const provider = new GoogleAuthProvider();
 const db = getFirestore(newApp);
-const oldDatabase = getDatabase(oldApp);
-
-/*
-  你的舊資料路徑。
-  你的網頁用 chris。
-  朋友的網頁之後改成 friend。
-*/
-const OLD_USER_ID = "chris";
-const OLD_DB_PATH = `beybladeData/${OLD_USER_ID}`;
 
 let currentUser = null;
 let unsubscribeCloudData = null;
@@ -1122,52 +1093,7 @@ function startCloudListener() {
   );
 }
 
-/* ====== 匯入舊 Realtime Database 資料 ====== */
 
-async function migrateOldDataToCurrentUser() {
-  if (!currentUser) {
-    alert("請先登入 Google 帳號");
-    return;
-  }
-
-  const ok = confirm(
-    "確定要把舊資料匯入到目前登入的 Google 帳號嗎？\n\n" +
-    "這會覆蓋目前 Google 帳號雲端裡的資料。"
-  );
-
-  if (!ok) return;
-
-  try {
-    setSyncStatus("正在讀取舊資料...");
-
-    const oldSnap = await get(ref(oldDatabase, OLD_DB_PATH));
-
-    if (!oldSnap.exists()) {
-      alert("找不到舊資料：" + OLD_DB_PATH);
-      setSyncStatus("找不到舊資料");
-      return;
-    }
-
-    const oldData = oldSnap.val();
-
-    await setDoc(getUserDocRef(), {
-      beybladeTable: oldData.beybladeTable || [],
-      partTable: oldData.partTable || [],
-      configTable: oldData.configTable || [],
-      historyTable: oldData.historyTable || [],
-      migratedFrom: OLD_DB_PATH,
-      migratedAt: Date.now(),
-      updatedAt: Date.now()
-    });
-    
-    alert("舊資料匯入成功");
-    setSyncStatus("舊資料已匯入到你的 Google 帳號");
-  } catch (error) {
-    console.error("匯入失敗：", error);
-    alert("匯入失敗：" + error.message);
-    setSyncStatus("匯入失敗");
-  }
-}
 /* ====== 第一區：新增陀螺配置 ====== */
 
 window.addRow = function () {
@@ -1613,20 +1539,17 @@ function updateAuthUI(user) {
   const logoutBtn = document.getElementById("logoutBtn");
   const userInfo = document.getElementById("userInfo");
   const userEmail = document.getElementById("userEmail");
-  const migrateOldDataBtn = document.getElementById("migrateOldDataBtn");
 
   if (user) {
     if (googleLoginBtn) googleLoginBtn.style.display = "none";
     if (logoutBtn) logoutBtn.style.display = "inline-block";
     if (userInfo) userInfo.style.display = "block";
     if (userEmail) userEmail.textContent = user.email || "";
-    if (migrateOldDataBtn) migrateOldDataBtn.style.display = "none";
   } else {
     if (googleLoginBtn) googleLoginBtn.style.display = "inline-block";
     if (logoutBtn) logoutBtn.style.display = "none";
     if (userInfo) userInfo.style.display = "none";
     if (userEmail) userEmail.textContent = "";
-    if (migrateOldDataBtn) migrateOldDataBtn.style.display = "none";
   }
 }
 
@@ -1654,7 +1577,6 @@ async function logoutGoogle() {
 document.addEventListener("DOMContentLoaded", function () {
   const googleLoginBtn = document.getElementById("googleLoginBtn");
   const logoutBtn = document.getElementById("logoutBtn");
-  const migrateOldDataBtn = document.getElementById("migrateOldDataBtn");
 
   if (googleLoginBtn) {
     googleLoginBtn.addEventListener("click", loginWithGoogle);
@@ -1662,10 +1584,6 @@ document.addEventListener("DOMContentLoaded", function () {
 
   if (logoutBtn) {
     logoutBtn.addEventListener("click", logoutGoogle);
-  }
-
-  if (migrateOldDataBtn) {
-    migrateOldDataBtn.addEventListener("click", migrateOldDataToCurrentUser);
   }
 
   clearAllTables();
