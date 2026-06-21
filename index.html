@@ -7,6 +7,57 @@
   <title>戰鬥陀螺管理表</title>
 
   <link rel="stylesheet" href="style.css" />
+  <style>
+    /* ====== 刪除配置對話框 ====== */
+    #deleteConfigModalBackdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.65);
+      z-index: 999;
+    }
+    #deleteConfigModalBox {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 1000;
+      background: #1f1f1f;
+      border: 1px solid #3a3a3a;
+      border-radius: 14px;
+      padding: 24px;
+      width: 340px;
+      max-width: 92vw;
+      box-shadow: 0 12px 40px rgba(0,0,0,0.5);
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    #deleteConfigModalTitle {
+      font-size: 17px;
+      font-weight: 700;
+      color: #ffffff;
+    }
+    .modal-field {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .modal-field label {
+      font-size: 13px;
+      color: #aaaaaa;
+    }
+    .modal-actions {
+      display: flex;
+      gap: 8px;
+      justify-content: flex-end;
+      margin-top: 4px;
+    }
+    .modal-actions button {
+      padding: 9px 18px;
+      font-size: 14px;
+      font-weight: 700;
+    }
+  </style>
 </head>
 <body>
   
@@ -188,6 +239,32 @@
         </thead>
         <tbody></tbody>
       </table>
+    </div>
+  </div>
+
+  <!-- 刪除配置原因對話框 -->
+  <div id="deleteConfigModal" style="display:none;">
+    <div id="deleteConfigModalBackdrop"></div>
+    <div id="deleteConfigModalBox">
+      <div id="deleteConfigModalTitle">移除配置原因</div>
+      <div class="modal-field">
+        <label for="deleteReasonSelect">原因</label>
+        <select id="deleteReasonSelect">
+          <option value="">請選擇原因</option>
+          <option value="不好用">不好用</option>
+          <option value="好用，暫時拆掉">好用，暫時拆掉測其他組合</option>
+          <option value="普通 / 無感">普通 / 無感</option>
+          <option value="打錯，不記錄">打錯，不記錄</option>
+        </select>
+      </div>
+      <div class="modal-field" id="deleteNoteField">
+        <label for="deleteNoteInput">備註（選填）</label>
+        <input type="text" id="deleteNoteInput" placeholder="例如：太容易爆、持久不夠、攻擊不穩">
+      </div>
+      <div class="modal-actions">
+        <button id="deleteConfigCancelBtn" class="danger-btn">取消</button>
+        <button id="deleteConfigConfirmBtn" class="primary-btn">確認刪除</button>
+      </div>
     </div>
   </div>
 
