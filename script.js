@@ -169,9 +169,22 @@ const RANDOM_BOOSTER_MODELS = new Set([
   "BX-48", "CX-17", "BX-50", "CX-18"
 ]);
 
+function getRandomBoosterBaseModel(model) {
+  const normalized = normalizeModel(model).toUpperCase().trim();
+  
+  const match = normalized.match(/^(UX|BX|CX)-?\s*(\d+)/i);
+
+  if (!match) return normalized;
+
+  const series = match[1].toUpperCase();
+  const number = match[2];
+
+  return ${series}-${number};
+}
+
 function isRandomBooster(model) {
-  const normalized = (model || "").toUpperCase().trim();
-  return RANDOM_BOOSTER_MODELS.has(normalized);
+  const baseModel = getRandomBoosterBaseModel(model);
+  return RANDOM_BOOSTER_MODELS.has(baseModel);
 }
 
 function getSeriesFromModel(model) {
