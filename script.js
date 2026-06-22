@@ -170,7 +170,6 @@ const RANDOM_BOOSTER_MODELS = new Set([
 ]);
 
 function isRandomBooster(model) {
-  // normalizeModel 保留前導零（CX-05 不會變成 CX-5），直接大寫比對
   const normalized = (model || "").toUpperCase().trim();
   return RANDOM_BOOSTER_MODELS.has(normalized);
 }
