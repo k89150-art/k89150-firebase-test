@@ -179,7 +179,7 @@ function getRandomBoosterBaseModel(model) {
   const series = match[1].toUpperCase();
   const number = match[2];
 
-  return ${series}-${number};
+  return `${series}-${number}`;
 }
 
 function isRandomBooster(model) {
@@ -542,7 +542,7 @@ window.restoreHistoryRow = function (button) {
   const series = getSeriesFromModel(model);
 
   const selectedParts = [
-    ["上蓋", series === "CX" ? "" : layer],
+    ["上蓋", (series === "CX" && !isRandomBooster(model)) ? "" : layer],
     ["紋章鎖", lockPart === "-" ? "" : lockPart],
     ["主要戰刃", mainPart.includes("/") ? "" : mainPart],
     ["超越戰刃", transcendPart === "-" ? "" : transcendPart],
@@ -1426,7 +1426,7 @@ function getTotalParts() {
       const cell = row.cells[cellIndex];
       const name = getStockNameFromCell(cell);
 
-      if (series === "CX" && type === "上蓋") {
+      if (series === "CX" && type === "上蓋" && !isRandomBooster(model)) {
         return;
       }
 
