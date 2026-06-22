@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>隱私權政策｜戰鬥陀螺管理表</title>
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    .site-nav { display:flex; flex-wrap:wrap; gap:8px; margin: 10px 0 18px; }
+    .site-nav a { text-decoration:none; display:inline-flex; align-items:center; justify-content:center; padding:9px 12px; }
+    .info-card { background:#181818; border:1px solid #333; border-radius:14px; padding:18px; margin-bottom:16px; line-height:1.8; }
+    .info-card h3 { margin-top:0; }
+    @media (max-width:600px){ .site-nav{flex-direction:column;} .site-nav a{width:100%; box-sizing:border-box;} }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>隱私權政策</h2>
+    <div class="site-nav">
+      <a class="secondary-btn" href="home.html">首頁</a>
+      <a class="secondary-btn" href="guide.html">使用教學</a>
+      <a class="primary-btn" href="index.html">開始使用</a>
+      <a class="secondary-btn" href="contact.html">聯絡方式</a>
+    </div>
+
+    <div class="info-card">
+      <h3>一、登入資料</h3>
+      <p>本站使用 Google 登入作為身分識別。登入後，系統會使用 Google 帳號提供的基本識別資料，例如使用者 UID 與電子郵件，用於區分不同玩家的資料。</p>
+    </div>
+
+    <div class="info-card">
+      <h3>二、儲存資料</h3>
+      <p>本站會將使用者自行輸入的陀螺零件、配置紀錄、歷史測試紀錄與參賽紀錄儲存在 Firebase Firestore。</p>
+      <p>資料路徑以各使用者帳號分開儲存，避免不同玩家的資料互相混用。</p>
+    </div>
+
+    <div class="info-card">
+      <h3>三、資料用途</h3>
+      <p>資料僅用於提供陀螺零件管理、配置管理、歷史紀錄與參賽紀錄功能，不會用於廣告投放或販售給第三方。</p>
+    </div>
+
+    <div class="info-card">
+      <h3>四、資料安全</h3>
+      <p>Firestore 已設定登入後才能讀寫自己的資料。網站管理者可依維護需求檢視資料，但不會任意公開使用者內容。</p>
+    </div>
+
+    <div class="info-card">
+      <h3>五、資料刪除</h3>
+      <p>若需要刪除帳號相關資料，請透過聯絡方式與網站管理者聯繫。</p>
+    </div>
+  </div>
+</body>
+</html>
