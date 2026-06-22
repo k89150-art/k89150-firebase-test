@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <title>參賽紀錄｜戰鬥陀螺管理表</title>
+
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    .page-nav { margin: -6px 0 18px 0; display: flex; gap: 8px; flex-wrap: wrap; }
+    .nav-link { display: inline-flex; align-items: center; justify-content: center; padding: 9px 14px; text-decoration: none; min-height: 38px; box-sizing: border-box; }
+    .tournament-form { display: grid; grid-template-columns: 150px 1fr 1fr 120px 1fr 120px; gap: 8px; background: #181818; padding: 12px; border-radius: 10px; margin-bottom: 16px; border: 1px solid #333; }
+    .tournament-form input, .tournament-form button { width: 100%; }
+    .tournament-list { display: flex; flex-direction: column; gap: 14px; }
+    .tournament-card { background: #181818; border: 1px solid #333; border-radius: 12px; overflow: hidden; }
+    .tournament-summary { display: flex; justify-content: space-between; gap: 12px; padding: 14px; background: #1d1d1d; }
+    .tournament-summary-main { min-width: 0; }
+    .tournament-title { color: #ffffff; font-size: 18px; font-weight: 700; margin-bottom: 6px; }
+    .tournament-meta { display: flex; flex-wrap: wrap; gap: 8px 14px; color: #cfcfcf; font-size: 13px; line-height: 1.5; }
+    .tournament-note { margin-top: 6px; color: #bdbdbd; font-size: 13px; line-height: 1.5; }
+    .tournament-actions, .match-actions { display: flex; gap: 6px; align-items: flex-start; flex-wrap: wrap; justify-content: flex-end; }
+    .tournament-actions button, .match-actions button { padding: 7px 10px; font-size: 12px; }
+    .tournament-detail { padding: 14px; border-top: 1px solid #333; }
+    .tournament-detail h4 { color: #ffffff; margin: 4px 0 10px 0; font-size: 16px; }
+    .tournament-detail h5 { color: #dcdcdc; margin: 12px 0 8px 0; font-size: 14px; }
+    .match-form { display: grid; grid-template-columns: 1fr; gap: 10px; background: #151515; border: 1px solid #303030; border-radius: 10px; padding: 12px; margin-bottom: 16px; }
+    .deck-input-group { display: grid; grid-template-columns: 70px 1fr 1fr; gap: 8px; align-items: center; }
+    .deck-input-group label { color: #dcdcdc; font-size: 13px; font-weight: 700; }
+    .match-card { background: #151515; border: 1px solid #303030; border-radius: 10px; padding: 12px; margin-bottom: 12px; }
+    .match-header { display: flex; justify-content: space-between; gap: 12px; align-items: flex-start; margin-bottom: 10px; }
+    .match-title { color: #ffffff; font-size: 15px; font-weight: 700; margin-bottom: 5px; }
+    .match-score { color: #dcdcdc; font-size: 13px; }
+    .deck-list { display: grid; gap: 6px; background: #1d1d1d; border: 1px solid #333; border-radius: 8px; padding: 10px; color: #d2d2d2; font-size: 13px; line-height: 1.5; }
+    .round-form { display: grid; grid-template-columns: 1.4fr 110px 150px 1fr 100px; gap: 8px; margin-bottom: 10px; }
+    .round-form select, .round-form input, .round-form button { width: 100%; }
+    .round-table-wrap { margin-bottom: 0; }
+    .round-table { min-width: 760px; }
+    .score-badge, .win-text, .lose-text, .progress-text { font-weight: 700; }
+    .win-text { color: #69db7c; }
+    .lose-text { color: #ff8787; }
+    .progress-text { color: #ffcc66; }
+    .empty-state { background: #181818; border: 1px solid #333; border-radius: 10px; padding: 12px; color: #bdbdbd; font-size: 14px; line-height: 1.5; }
+    @media (max-width: 900px) { .tournament-form { grid-template-columns: repeat(2, 1fr); } .round-form { grid-template-columns: repeat(2, 1fr); } .tournament-summary, .match-header { flex-direction: column; } .tournament-actions, .match-actions { width: 100%; justify-content: flex-start; } }
+    @media (max-width: 600px) { .page-nav { flex-direction: column; } .nav-link { width: 100%; } .tournament-form, .match-form, .round-form { display: flex; flex-direction: column; gap: 8px; } .deck-input-group { display: flex; flex-direction: column; align-items: stretch; gap: 6px; } .tournament-actions button, .match-actions button { width: 100%; min-height: 40px; } .tournament-card, .match-card { border-radius: 10px; } }
+  </style>
+</head>
+<body>
+  <div id="authArea" class="auth-card">
+    <div class="auth-main">
+      <div>
+        <div class="auth-title">參賽紀錄雲端同步</div>
+
+        <div id="userInfo" class="auth-user" style="display:none;">
+          已登入：<strong id="userEmail"></strong>
+        </div>
+
+        <div id="syncStatus" class="auth-status status-muted">
+          尚未登入
+        </div>
+      </div>
+
+      <div class="auth-actions">
+        <button id="googleLoginBtn" class="primary-btn">使用 Google 登入</button>
+        <button id="logoutBtn" class="danger-btn" style="display:none;">登出</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="container">
+    <h2>參賽紀錄</h2>
+
+    <div class="page-nav">
+      <a href="index.html" class="secondary-btn nav-link">返回管理表</a>
+    </div>
+
+    <div class="history-note">
+      這裡可以記錄每場比賽、對手局、每回合得失分與當局使用的 3 顆陀螺。
+    </div>
+
+    <h3>新增比賽</h3>
+
+    <div class="tournament-form">
+      <input type="date" id="tournamentDate">
+      <input type="text" id="tournamentName" placeholder="比賽名稱">
+      <input type="text" id="tournamentLocation" placeholder="地點">
+      <input type="text" id="tournamentRank" placeholder="名次">
+      <input type="text" id="tournamentNote" placeholder="備註">
+      <button type="button" onclick="addTournament()" class="primary-btn">新增比賽</button>
+    </div>
+
+    <h3>比賽列表</h3>
+
+    <div id="tournamentList" class="tournament-list"></div>
+  </div>
+
+  <script type="module" src="tournament.js?v=20260622-tournament1"></script>
+</body>
+</html>
