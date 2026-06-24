@@ -19,7 +19,8 @@ function closeSideMenu() {
     { href: "changelog.html", label: "更新紀錄", group: "說明" },
     { href: "privacy.html", label: "隱私權政策", group: "說明" },
     { href: "about.html", label: "關於本站", group: "說明" },
-    { href: "contact.html", label: "聯絡方式", group: "說明" }
+    { href: "contact.html", label: "聯絡方式", group: "說明" },
+    { href: "admin.html", label: "管理員後台", group: "管理" }
   ];
 
   let html = `
