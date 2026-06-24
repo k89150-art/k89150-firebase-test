@@ -20,5 +20,9 @@ service cloud.firestore {
 
       allow write: if isSignedIn() && request.auth.uid == userId;
     }
+
+    match /{path=**}/appData/{documentId} {
+      allow read: if isAdmin();
+    }
   }
 }
