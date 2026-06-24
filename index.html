@@ -445,6 +445,17 @@
       document.body.classList.remove("side-menu-open");
     }
   </script>
-  <script type="module" src="script.js?v=20260624-admin-clean1"></script>
+
+  <script>
+    // 避免選填零件用「-」代表空值時，被拿去做庫存檢查。
+    (function () {
+      const originalIncludes = String.prototype.includes;
+      String.prototype.includes = function (searchString, position) {
+        if (String(this) === "-" && searchString === "/") return true;
+        return originalIncludes.call(this, searchString, position);
+      };
+    })();
+  </script>
+  <script type="module" src="script.js?v=20260624-stock-dash-fix1"></script>
 </body>
 </html>
