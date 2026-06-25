@@ -729,7 +729,9 @@ window.editRow = function (button, tableType) {
       const type = configEditColumnMap[i];
       const currentText = getConfigEditCurrentValue(row, i);
 
-      row.cells[i].innerHTML = buildConfigEditSelect(type, currentText, row);
+      row.cells[i].innerHTML = isCxAutoLayerEdit(row, i)
+        ? buildCxAutoLayerEditControl()
+        : buildConfigEditSelect(type, currentText, row);
     }
 
     else {
@@ -890,6 +892,22 @@ function getConfigEditCurrentValue(row, index) {
   return currentText;
 }
 
+function isCxAutoLayerEdit(row, index) {
+  if (index !== 1) return false;
+
+  const model = normalizeModel(row.cells[0]?.innerText.trim() || "");
+
+  return getSeriesFromModel(model) === "CX" && !isRandomBooster(model);
+}
+
+function buildCxAutoLayerEditControl() {
+  return `
+    <select>
+      <option value="">儲存後自動產生</option>
+    </select>
+  `;
+}
+
 function buildConfigEditSelect(type, currentValue, editingRow) {
   const total = getTotalParts();
   const used = getUsedPartsExceptRow(editingRow);
@@ -992,10 +1010,12 @@ function saveConfigEditRow(button) {
       return;
     }
 
-    const useNormalMainBlade = mainSel && !transcendSel && !metalSel;
-    const useSplitMainBlade = !mainSel && transcendSel && metalSel;
+    const hasSplitMainBlade = Boolean(transcendSel && metalSel);
+    const hasPartialSplitMainBlade = Boolean(transcendSel || metalSel) && !hasSplitMainBlade;
+    const useNormalMainBlade = Boolean(mainSel && !hasSplitMainBlade && !hasPartialSplitMainBlade);
+    const useSplitMainBlade = hasSplitMainBlade;
 
-    if (!useNormalMainBlade && !useSplitMainBlade) {
+    if (hasPartialSplitMainBlade || (!useNormalMainBlade && !useSplitMainBlade)) {
       alert("CX 系列主要戰刃請二選一選擇：\n1. 主要戰刃\n2. 超越戰刃 + 金屬戰刃");
       return;
     }
