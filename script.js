@@ -727,7 +727,7 @@ window.editRow = function (button, tableType) {
 
     else if (tableType === "config" && configEditColumnMap[i]) {
       const type = configEditColumnMap[i];
-      const currentText = row.cells[i].innerText.trim();
+      const currentText = getConfigEditCurrentValue(row, i);
 
       row.cells[i].innerHTML = buildConfigEditSelect(type, currentText, row);
     }
@@ -864,6 +864,30 @@ function updateMainStockName(row) {
   } else {
     mainCell.dataset.stockName = main;
   }
+}
+
+function getConfigEditCurrentValue(row, index) {
+  const currentText = row.cells[index]?.innerText.trim() || "";
+  const model = normalizeModel(row.cells[0]?.innerText.trim() || "");
+
+  if (getSeriesFromModel(model) !== "CX" || isRandomBooster(model)) {
+    return currentText;
+  }
+
+  if (index === 1) {
+    return "";
+  }
+
+  if (index === 3) {
+    const transcend = row.cells[4]?.innerText.trim() || "-";
+    const metal = row.cells[5]?.innerText.trim() || "-";
+
+    if (transcend !== "-" && metal !== "-") {
+      return "";
+    }
+  }
+
+  return currentText;
 }
 
 function buildConfigEditSelect(type, currentValue, editingRow) {
