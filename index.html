@@ -447,15 +447,82 @@
   </script>
 
   <script>
-    // 避免選填零件用「-」代表空值時，被拿去做庫存檢查。
+    // 1. 避免選填零件用「-」代表空值時，被拿去做主要戰刃庫存檢查。
+    // 2. CX-07、UX-19 本身沒有固鎖，允許固鎖選「-」並略過固鎖庫存檢查。
     (function () {
       const originalIncludes = String.prototype.includes;
       String.prototype.includes = function (searchString, position) {
         if (String(this) === "-" && searchString === "/") return true;
         return originalIncludes.call(this, searchString, position);
       };
+
+      Object.defineProperty(Object.prototype, "__NO_RATCHET_TOTAL__", {
+        configurable: true,
+        get: function () { return 999999; }
+      });
+
+      Object.defineProperty(Object.prototype, "__NO_RATCHET_USED__", {
+        configurable: true,
+        get: function () { return 0; }
+      });
+
+      function normalizeNoRatchetModel(model) {
+        const text = String(model || "").trim().toUpperCase().replace(/\s+/g, " ");
+        const match = text.match(/^(CX|UX)\s*-?\s*(\d+)/);
+        if (!match) return text;
+        return `${match[1]}-${String(Number(match[2])).padStart(2, "0")}`;
+      }
+
+      function isNoRatchetModel() {
+        const model = normalizeNoRatchetModel(document.getElementById("confModel")?.value || "");
+        return model === "CX-07" || model === "UX-19";
+      }
+
+      function makeNoRatchetValue() {
+        let readCount = 0;
+        return {
+          toString: function () { return "-"; },
+          valueOf: function () { return "-"; },
+          [Symbol.toPrimitive]: function () {
+            readCount += 1;
+            if (readCount === 1) return "__NO_RATCHET_TOTAL__";
+            if (readCount === 2) return "__NO_RATCHET_USED__";
+            return "-";
+          }
+        };
+      }
+
+      const valueDescriptor = Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, "value");
+      Object.defineProperty(HTMLSelectElement.prototype, "value", {
+        configurable: true,
+        get: function () {
+          const value = valueDescriptor.get.call(this);
+          if (this.id === "sel固鎖" && value === "-" && isNoRatchetModel()) {
+            return makeNoRatchetValue();
+          }
+          return value;
+        },
+        set: function (value) {
+          return valueDescriptor.set.call(this, value);
+        }
+      });
+
+      function ensureNoRatchetOption() {
+        const select = document.getElementById("sel固鎖");
+        if (!select || select.querySelector('option[value="-"]')) return;
+
+        const option = document.createElement("option");
+        option.value = "-";
+        option.textContent = "無固鎖（-）";
+        select.insertBefore(option, select.children[1] || null);
+      }
+
+      document.addEventListener("DOMContentLoaded", function () {
+        ensureNoRatchetOption();
+        setInterval(ensureNoRatchetOption, 500);
+      });
     })();
   </script>
-  <script type="module" src="script.js?v=20260624-stock-dash-fix1"></script>
+  <script type="module" src="script.js?v=20260625-no-ratchet-fix1"></script>
 </body>
 </html>
