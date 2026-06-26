@@ -124,12 +124,12 @@ function renderTable() {
   if (!tbody) return;
 
   if (!isAdmin()) {
-    tbody.innerHTML = `<tr><td colspan="9">請先以管理員帳號登入。</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="4">請先以管理員帳號登入。</td></tr>`;
     return;
   }
 
   if (!adminRows.length) {
-    tbody.innerHTML = `<tr><td colspan="9">目前沒有讀取到使用者資料。</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="4">目前沒有讀取到使用者資料。</td></tr>`;
     return;
   }
 
@@ -137,11 +137,6 @@ function renderTable() {
     <tr>
       <td>${escapeHtml(row.email || "-")}</td>
       <td>${escapeHtml(row.uid)}</td>
-      <td>${row.beybladeCount}</td>
-      <td>${row.partCount}</td>
-      <td>${row.configCount}</td>
-      <td>${row.historyCount}</td>
-      <td>${row.tournamentCount}</td>
       <td>${escapeHtml(row.updatedAtText)}</td>
       <td><button type="button" onclick="openUserPage('${escapeHtml(row.uid)}')">進入頁面</button></td>
     </tr>
@@ -197,8 +192,6 @@ window.loadAdminData = async function () {
         return {
           uid: data.ownerUid || getUidFromDoc(snapshot),
           email: data.ownerEmail || "-",
-          beybladeCount: countArray(data, "beybladeTable"),
-          partCount: countArray(data, "partTable"),
           configCount: countArray(data, "configTable"),
           historyCount: countArray(data, "historyTable"),
           tournamentCount: countArray(data, "tournamentRecords"),
