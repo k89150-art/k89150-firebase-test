@@ -12,7 +12,9 @@ import {
   getFirestore,
   doc,
   setDoc,
-  onSnapshot
+  onSnapshot,
+  collectionGroup,
+  getDocs
 } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-firestore.js";
 
 
@@ -37,6 +39,14 @@ const db = getFirestore(newApp);
 let currentUser = null;
 let unsubscribeCloudData = null;
 let isApplyingRemoteData = false;
+
+const ADMIN_UIDS = [
+  "SesDhvXG6MUT38YhqGl0N6lVgMz1"
+];
+
+function isAdminUser() {
+  return currentUser && ADMIN_UIDS.includes(currentUser.uid);
+}
 
 function getUserDocRef() {
   if (!currentUser) return null;
@@ -198,6 +208,22 @@ function getValue(id) {
   return el ? el.value.trim() : "";
 }
 
+function preventInvalidPartCountInput(input) {
+  input.addEventListener("keydown", event => {
+    if (["-", "+", ".", "e", "E"].includes(event.key)) {
+      event.preventDefault();
+    }
+  });
+
+  input.addEventListener("input", () => {
+    const value = Number(input.value);
+
+    if (input.value && (!Number.isInteger(value) || value < 1)) {
+      input.value = "";
+    }
+  });
+}
+
 function clearFirstAreaInputs() {
   [
     "model",
@@ -245,15 +271,15 @@ function escapeHtml(text) {
 
 function getOperationButtons(tableType) {
   return `
-    <button onclick="editRow(this, '${tableType}')">修改</button>
-    <button onclick="deleteRow(this)">刪除</button>
+    <button type="button" onclick="editRow(this, '${tableType}')">修改</button>
+    <button type="button" onclick="deleteRow(this)">刪除</button>
   `;
 }
 
 function getEditingButtons(tableType) {
   return `
-    <button onclick="saveEditRow(this, '${tableType}')">保存</button>
-    <button onclick="cancelEditRow(this, '${tableType}')">取消</button>
+    <button type="button" onclick="saveEditRow(this, '${tableType}')">保存</button>
+    <button type="button" onclick="cancelEditRow(this, '${tableType}')">取消</button>
   `;
 }
 function normalizeComboValue(value) {
@@ -359,6 +385,7 @@ function createHistoryRow(record) {
   row.insertCell(5).innerText = record.note || "-";
   row.insertCell(6).innerText = record.date || "-";
   row.insertCell(7).innerHTML =
+    '<button onclick="restoreHistoryRow(this)">還原</button>' +
     '<button onclick="deleteHistoryRow(this)">刪除</button>';
 }
 
@@ -394,13 +421,26 @@ function askDeleteReasonForConfig(row) {
     const cancelBtn = document.getElementById("deleteConfigCancelBtn");
     const backdrop = document.getElementById("deleteConfigModalBackdrop");
 
+    if (!modal || !reasonSelect || !noteInput || !confirmBtn || !cancelBtn || !backdrop) {
+      resolve(null);
+      return;
+    }
+
+    const previousActiveElement = document.activeElement;
+
     reasonSelect.value = "";
     noteInput.value = "";
     reasonSelect.style.borderColor = "";
-    modal.style.display = "block";
+    modal.hidden = false;
+    modal.setAttribute("aria-hidden", "false");
+    reasonSelect.focus();
 
     function cleanup() {
-      modal.style.display = "none";
+      modal.hidden = true;
+      modal.setAttribute("aria-hidden", "true");
+      if (previousActiveElement && typeof previousActiveElement.focus === "function") {
+        previousActiveElement.focus();
+      }
       confirmBtn.removeEventListener("click", onConfirm);
       cancelBtn.removeEventListener("click", onCancel);
       backdrop.removeEventListener("click", onCancel);
@@ -433,6 +473,93 @@ function askDeleteReasonForConfig(row) {
     backdrop.addEventListener("click", onCancel);
   });
 }
+
+window.restoreHistoryRow = function (button) {
+  if (!requireLogin()) return;
+
+  const historyRow = button.parentElement.parentElement;
+  const comboKey = historyRow.dataset.comboKey || "";
+
+  if (!comboKey) {
+    alert("這筆歷史紀錄缺少組合資料，無法還原。");
+    return;
+  }
+
+  const parts = comboKey.split("|");
+
+  if (parts.length < 8) {
+    alert("這筆歷史紀錄格式不完整，無法還原。");
+    return;
+  }
+
+  const model = normalizeModel(historyRow.cells[0]?.innerText.trim() || "");
+  const layer = parts[0] || "-";
+  const lockPart = parts[1] || "-";
+  const mainPart = parts[2] || "-";
+  const transcendPart = parts[3] || "-";
+  const metalPart = parts[4] || "-";
+  const auxPart = parts[5] || "-";
+  const fix = parts[6] || "-";
+  const axis = parts[7] || "-";
+
+  if (!model) {
+    alert("這筆歷史紀錄缺少型號，無法還原。");
+    return;
+  }
+
+  const ok = confirm(
+    "確定要把這筆歷史紀錄還原到配置紀錄區嗎？\n\n" +
+    "型號：" + model + "\n" +
+    "組合：" + (historyRow.cells[1]?.innerText.trim() || "-") + "\n" +
+    "固鎖：" + fix + "\n" +
+    "軸心：" + axis
+  );
+
+  if (!ok) return;
+
+  const total = getTotalParts();
+  const used = getUsedParts();
+
+  const series = getSeriesFromModel(model);
+
+  const selectedParts = [
+    ["上蓋", series === "CX" ? "" : layer],
+    ["紋章鎖", lockPart === "-" ? "" : lockPart],
+    ["主要戰刃", mainPart.includes("/") ? "" : mainPart],
+    ["超越戰刃", transcendPart === "-" ? "" : transcendPart],
+    ["金屬戰刃", metalPart === "-" ? "" : metalPart],
+    ["輔助戰刃", auxPart === "-" ? "" : auxPart],
+    ["固鎖", fix === "-" ? "" : fix],
+    ["軸心", axis === "-" ? "" : axis]
+  ];
+
+  for (const [type, name] of selectedParts) {
+    if (!checkStock(type, name, total, used)) return;
+  }
+
+  const cells = [
+    model,
+    layer,
+    lockPart,
+    mainPart,
+    transcendPart,
+    metalPart,
+    auxPart,
+    fix,
+    axis
+  ];
+
+  const mainStockName =
+    transcendPart !== "-" && metalPart !== "-"
+      ? ""
+      : mainPart;
+
+  createConfigRow(cells, mainStockName);
+
+  sortBeybladeTable();
+  refreshSelectors();
+  saveData();
+};
 
 window.deleteHistoryRow = function (button) {
   if (!requireLogin()) return;
@@ -910,6 +1037,8 @@ function collectCurrentData() {
     partTable: getTableData("partTable", false),
     configTable: getTableData("configTable", true),
     historyTable: getHistoryData(),
+    ownerUid: currentUser ? currentUser.uid : "",
+    ownerEmail: currentUser ? currentUser.email || "" : "",
     updatedAt: Date.now()
   };
 }
@@ -1216,8 +1345,8 @@ window.addPart = function () {
     return;
   }
 
-  if (count <= 0) {
-    alert("數量必須大於 0");
+  if (!Number.isInteger(count) || count <= 0) {
+    alert("數量必須是大於 0 的整數");
     return;
   }
 
@@ -1539,6 +1668,7 @@ function updateAuthUI(user) {
   const logoutBtn = document.getElementById("logoutBtn");
   const userInfo = document.getElementById("userInfo");
   const userEmail = document.getElementById("userEmail");
+  const adminViewSection = document.getElementById("adminViewSection");
 
   if (user) {
     if (googleLoginBtn) googleLoginBtn.style.display = "none";
@@ -1550,6 +1680,73 @@ function updateAuthUI(user) {
     if (logoutBtn) logoutBtn.style.display = "none";
     if (userInfo) userInfo.style.display = "none";
     if (userEmail) userEmail.textContent = "";
+  }
+
+  if (user && isAdminUser()) {
+    if (adminViewSection) adminViewSection.style.display = "block";
+  } else {
+    if (adminViewSection) adminViewSection.style.display = "none";
+
+    const adminTableBody = document.querySelector("#adminConfigTable tbody");
+    if (adminTableBody) adminTableBody.innerHTML = "";
+  }
+}
+
+
+async function loadAllUserConfigsForAdmin() {
+  if (!requireLogin()) return;
+
+  if (!isAdminUser()) {
+    alert("你沒有管理員權限。");
+    return;
+  }
+
+  const tbody = document.querySelector("#adminConfigTable tbody");
+  if (!tbody) return;
+
+  tbody.innerHTML = "";
+
+  try {
+    setSyncStatus("正在載入管理員檢視資料...", "saving");
+
+    const snapshot = await getDocs(collectionGroup(db, "appData"));
+
+    snapshot.forEach(docSnap => {
+      if (docSnap.id !== "main") return;
+
+      const data = docSnap.data();
+      const ownerUid = data.ownerUid || docSnap.ref.parent.parent?.id || "";
+      const ownerEmail = data.ownerEmail || ownerUid || "未知使用者";
+      const updatedAt = data.updatedAt
+        ? new Date(data.updatedAt).toLocaleString("zh-TW")
+        : "-";
+
+      const configRows = data.configTable || [];
+
+      configRows.forEach(item => {
+        const cells = item.cells || [];
+
+        const row = tbody.insertRow();
+
+        row.insertCell(0).innerText = ownerEmail;
+        row.insertCell(1).innerText = cells[0] || "-";
+        row.insertCell(2).innerText = cells[1] || "-";
+        row.insertCell(3).innerText = cells[2] || "-";
+        row.insertCell(4).innerText = cells[3] || "-";
+        row.insertCell(5).innerText = cells[4] || "-";
+        row.insertCell(6).innerText = cells[5] || "-";
+        row.insertCell(7).innerText = cells[6] || "-";
+        row.insertCell(8).innerText = cells[7] || "-";
+        row.insertCell(9).innerText = cells[8] || "-";
+        row.insertCell(10).innerText = updatedAt;
+      });
+    });
+
+    setSyncStatus("管理員檢視資料已載入", "saved");
+  } catch (error) {
+    console.error("管理員檢視資料載入失敗：", error);
+    alert("管理員檢視資料載入失敗：" + error.message);
+    setSyncStatus("管理員資料載入失敗", "error");
   }
 }
 
@@ -1577,6 +1774,16 @@ async function logoutGoogle() {
 document.addEventListener("DOMContentLoaded", function () {
   const googleLoginBtn = document.getElementById("googleLoginBtn");
   const logoutBtn = document.getElementById("logoutBtn");
+  const partCountInput = document.getElementById("partCount");
+  const loadAdminConfigsBtn = document.getElementById("loadAdminConfigsBtn");
+
+  if (partCountInput) {
+    preventInvalidPartCountInput(partCountInput);
+  }
+
+  if (loadAdminConfigsBtn) {
+    loadAdminConfigsBtn.addEventListener("click", loadAllUserConfigsForAdmin);
+  }
 
   if (googleLoginBtn) {
     googleLoginBtn.addEventListener("click", loginWithGoogle);

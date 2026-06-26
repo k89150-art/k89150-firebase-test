@@ -7,118 +7,29 @@
   <title>戰鬥陀螺管理表</title>
 
   <link rel="stylesheet" href="style.css" />
-  <style>
-    /* ====== 刪除配置對話框 ====== */
-    @keyframes modalSlideUp {
-      from { transform: translate(-50%, calc(-50% + 20px)); opacity: 0; }
-      to   { transform: translate(-50%, -50%);              opacity: 1; }
-    }
-    @keyframes modalSheetUp {
-      from { transform: translateY(100%); opacity: 0; }
-      to   { transform: translateY(0);    opacity: 1; }
-    }
-    #deleteConfigModalBackdrop {
-      position: fixed;
-      inset: 0;
-      background: rgba(0, 0, 0, 0.65);
-      z-index: 999;
-    }
-    #deleteConfigModalBox {
-      position: fixed;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      z-index: 1000;
-      background: #1f1f1f;
-      border: 1px solid #3a3a3a;
-      border-radius: 14px;
-      padding: 24px;
-      width: 340px;
-      max-width: 92vw;
-      box-shadow: 0 12px 40px rgba(0,0,0,0.5);
-      animation: modalSlideUp 0.2s ease;
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
-    }
-    #deleteConfigModalTitle {
-      font-size: 17px;
-      font-weight: 700;
-      color: #ffffff;
-    }
-    .modal-field {
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-    }
-    .modal-field label {
-      font-size: 13px;
-      color: #aaaaaa;
-    }
-    .modal-actions {
-      display: flex;
-      gap: 8px;
-      justify-content: flex-end;
-      margin-top: 4px;
-    }
-    .modal-actions button {
-      padding: 9px 18px;
-      font-size: 14px;
-      font-weight: 700;
-    }
-    .modal-field select,
-    .modal-field input {
-      width: 100%;
-      box-sizing: border-box;
-    }
-    @media (max-width: 600px) {
-      #deleteConfigModalBox {
-        width: 100%;
-        max-width: 100%;
-        border-radius: 18px 18px 0 0;
-        top: auto;
-        bottom: 0;
-        left: 0;
-        transform: none;
-        animation: modalSheetUp 0.25s ease;
-        padding: 24px 20px 32px 20px;
-      }
-      .modal-actions {
-        flex-direction: column-reverse;
-        gap: 10px;
-      }
-      .modal-actions button {
-        width: 100%;
-        padding: 14px;
-        font-size: 16px;
-        min-height: 48px;
-      }
-    }
-  </style>
 </head>
 <body>
   
   <div id="authArea" class="auth-card">
-  <div class="auth-main">
-    <div>
-      <div class="auth-title">雲端同步</div>
+    <div class="auth-main">
+      <div>
+        <div class="auth-title">雲端同步</div>
 
-      <div id="userInfo" class="auth-user" style="display:none;">
-        已登入：<strong id="userEmail"></strong>
+        <div id="userInfo" class="auth-user" style="display:none;">
+          已登入：<strong id="userEmail"></strong>
+        </div>
+
+        <div id="syncStatus" class="auth-status status-muted">
+          尚未登入
+        </div>
       </div>
 
-      <div id="syncStatus" class="auth-status status-muted">
-        尚未登入
+      <div class="auth-actions">
+        <button type="button" id="googleLoginBtn" class="primary-btn">使用 Google 登入</button>
+        <button type="button" id="logoutBtn" class="danger-btn" style="display:none;">登出</button>
       </div>
-    </div>
-
-    <div class="auth-actions">
-      <button id="googleLoginBtn" class="primary-btn">使用 Google 登入</button>
-      <button id="logoutBtn" class="danger-btn" style="display:none;">登出</button>
     </div>
   </div>
-
-</div>
 
   <div class="container">
     <h2>戰鬥陀螺管理表</h2>
@@ -138,7 +49,7 @@
       <input type="text" id="fix" placeholder="固鎖">
       <input type="text" id="axis" placeholder="軸心">
 
-      <button onclick="addRow()">新增</button>
+      <button type="button" onclick="addRow()">新增</button>
     </div>
 
     <div class="table-wrap">
@@ -176,8 +87,8 @@
       </select>
 
       <input type="text" id="partName" placeholder="零件名稱">
-      <input type="number" id="partCount" placeholder="數量">
-      <button onclick="addPart()">新增零件</button>
+      <input type="number" id="partCount" min="1" step="1" inputmode="numeric" placeholder="數量">
+      <button type="button" onclick="addPart()">新增零件</button>
     </div>
 
     <div class="table-wrap">
@@ -231,7 +142,7 @@
         <option value="">選擇軸心</option>
       </select>
 
-      <button onclick="addConfig()">加入配置表</button>
+      <button type="button" onclick="addConfig()">加入配置表</button>
     </div>
 
     <div class="table-wrap">
@@ -277,12 +188,41 @@
         <tbody></tbody>
       </table>
     </div>
+    <section id="adminViewSection" style="display:none;">
+      <h3>管理員檢視區</h3>
+      <div class="history-note">
+        僅管理員可見。此區只可查看其他人的配置，不能修改或刪除。
+      </div>
+
+      <button id="loadAdminConfigsBtn" type="button">載入所有使用者配置</button>
+
+      <div class="table-wrap">
+        <table id="adminConfigTable">
+          <thead>
+            <tr>
+              <th>使用者</th>
+              <th>型號</th>
+              <th>上蓋</th>
+              <th>紋章鎖</th>
+              <th>主要戰刃</th>
+              <th>超越戰刃</th>
+              <th>金屬戰刃</th>
+              <th>輔助戰刃</th>
+              <th>固鎖</th>
+              <th>軸心</th>
+              <th>最後更新</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
   </div>
 
   <!-- 刪除配置原因對話框 -->
-  <div id="deleteConfigModal" style="display:none;">
+  <div id="deleteConfigModal" hidden aria-hidden="true">
     <div id="deleteConfigModalBackdrop"></div>
-    <div id="deleteConfigModalBox">
+    <div id="deleteConfigModalBox" role="dialog" aria-modal="true" aria-labelledby="deleteConfigModalTitle">
       <div id="deleteConfigModalTitle">移除配置原因</div>
       <div class="modal-field">
         <label for="deleteReasonSelect">原因</label>
@@ -299,12 +239,12 @@
         <input type="text" id="deleteNoteInput" placeholder="例如：太容易爆、持久不夠、攻擊不穩">
       </div>
       <div class="modal-actions">
-        <button id="deleteConfigCancelBtn" class="danger-btn">取消</button>
-        <button id="deleteConfigConfirmBtn" class="primary-btn">確認刪除</button>
+        <button type="button" id="deleteConfigCancelBtn" class="danger-btn">取消</button>
+        <button type="button" id="deleteConfigConfirmBtn" class="primary-btn">確認刪除</button>
       </div>
     </div>
   </div>
 
-  <script type="module" src="script.js?v=20260619-safe1"></script>
+  <script type="module" src="script.js?v=20260621-admin-readonly1"></script>
 </body>
 </html>
