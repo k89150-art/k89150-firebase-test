@@ -10,6 +10,8 @@
     .site-nav a { text-decoration:none; display:inline-flex; align-items:center; justify-content:center; padding:9px 12px; }
     .info-card { background:#181818; border:1px solid #333; border-radius:14px; padding:18px; margin-bottom:16px; line-height:1.8; }
     .version-title { color:#fff; font-size:18px; font-weight:800; margin-bottom:8px; }
+    .version-meta { color:#aaa; font-size:13px; margin-bottom:10px; }
+    .change-tag { display:inline-block; color:#dbe7ff; background:rgba(61,126,255,.18); border:1px solid rgba(61,126,255,.38); border-radius:999px; padding:1px 8px; margin-right:6px; font-size:12px; font-weight:700; }
     .update-list { margin:0; padding-left:20px; }
     .update-list li { margin-bottom:6px; }
     @media (max-width:600px){ .site-nav{flex-direction:column;} .site-nav a{width:100%; box-sizing:border-box;} }
@@ -23,6 +25,18 @@
       <a class="primary-btn" href="index.html">開始使用</a>
       <a class="secondary-btn" href="guide.html">使用教學</a>
       <a class="secondary-btn" href="privacy.html">隱私權政策</a>
+    </div>
+
+    <div class="info-card">
+      <div class="version-title">v1.5.5｜結構整理與手機操作優化</div>
+      <div class="version-meta">2026-06-28</div>
+      <ul class="update-list">
+        <li><span class="change-tag">結構</span>將 CX-07 / UX-19 無固鎖配置規則整合回主程式，移除外掛補丁引用。</li>
+        <li><span class="change-tag">結構</span>停用舊版 prototype 補丁，降低之後維護與除錯風險。</li>
+        <li><span class="change-tag">手機</span>編輯資料列時新增高亮提示，手機操作更容易辨識目前正在修改哪一筆。</li>
+        <li><span class="change-tag">手機</span>表格操作欄在小螢幕橫向滑動時固定在右側，修改與刪除按鈕更好按。</li>
+        <li><span class="change-tag">部署</span>新增 Firestore Rules 手動部署流程，降低規則更新後忘記發布的機率。</li>
+      </ul>
     </div>
 
     <div class="info-card">
