@@ -181,6 +181,8 @@ const RANDOM_BOOSTER_MODELS = new Set([
   "BX-48", "CX-17", "BX-50", "CX-18"
 ]);
 
+const NO_RATCHET_MODELS = new Set(["CX-07", "UX-19"]);
+
 function getRandomBoosterBaseModel(model) {
   const normalized = normalizeModel(model).toUpperCase().trim();
   
@@ -194,9 +196,29 @@ function getRandomBoosterBaseModel(model) {
   return `${series}-${number}`;
 }
 
+function getBaseModelCode(model) {
+  const normalized = normalizeModel(model).toUpperCase().trim();
+  const match = normalized.match(/^(UX|BX|CX)-?\s*(\d+)/i);
+
+  if (!match) return normalized;
+
+  const series = match[1].toUpperCase();
+  const number = match[2];
+
+  return `${series}-${String(Number(number)).padStart(2, "0")}`;
+}
+
 function isRandomBooster(model) {
   const baseModel = getRandomBoosterBaseModel(model);
   return RANDOM_BOOSTER_MODELS.has(baseModel);
+}
+
+function isNoRatchetModel(model) {
+  return NO_RATCHET_MODELS.has(getBaseModelCode(model));
+}
+
+function getNoRatchetFixValue(model, value) {
+  return isNoRatchetModel(model) && !value ? "-" : value;
 }
 
 function getSeriesFromModel(model) {
@@ -674,6 +696,7 @@ window.editRow = function (button, tableType) {
     if (row.dataset.editing === "true") return;
 
   row.dataset.editing = "true";
+  row.classList.add("editing-row");
 
   const originalCells = Array.from(row.cells)
     .slice(0, -1)
@@ -811,6 +834,7 @@ window.saveEditRow = function (button, tableType) {
   delete row.dataset.originalCells;
   delete row.dataset.originalMainStockName;
   delete row.dataset.editing;
+  row.classList.remove("editing-row");
 
   refreshSelectors();
   saveData();
@@ -830,6 +854,7 @@ window.cancelEditRow = function (button, tableType) {
   delete row.dataset.originalCells;
   delete row.dataset.originalMainStockName;
   delete row.dataset.editing;
+  row.classList.remove("editing-row");
 
   sortBeybladeTable();
   refreshSelectors();
@@ -911,11 +936,16 @@ function buildCxAutoLayerEditControl() {
 function buildConfigEditSelect(type, currentValue, editingRow) {
   const total = getTotalParts();
   const used = getUsedPartsExceptRow(editingRow);
+  const model = normalizeModel(editingRow.cells[0]?.innerText.trim() || "");
 
   let html = `<select>`;
   html += `<option value="">不選擇</option>`;
 
   const names = new Set();
+
+  if (type === "固鎖" && isNoRatchetModel(model)) {
+    names.add("-");
+  }
 
   Object.keys(total[type] || {}).forEach(name => {
     const totalCount = total[type][name] || 0;
@@ -992,8 +1022,9 @@ function saveConfigEditRow(button) {
   const transcendSel = getEditCellValue(row, 4);
   const metalSel = getEditCellValue(row, 5);
   const auxSel = getEditCellValue(row, 6);
-  const fixSel = getEditCellValue(row, 7);
+  let fixSel = getEditCellValue(row, 7);
   const axisSel = getEditCellValue(row, 8);
+  fixSel = getNoRatchetFixValue(model, fixSel);
 
   let layer = "-";
   let lockPart = "-";
@@ -1066,7 +1097,7 @@ function saveConfigEditRow(button) {
     ["超越戰刃", transcendPart === "-" ? "" : transcendPart],
     ["金屬戰刃", metalPart === "-" ? "" : metalPart],
     ["輔助戰刃", auxPart === "-" ? "" : auxPart],
-    ["固鎖", fixSel],
+    ["固鎖", fixSel === "-" ? "" : fixSel],
     ["軸心", axisSel]
   ];
 
@@ -1097,6 +1128,7 @@ function saveConfigEditRow(button) {
   delete row.dataset.originalCells;
   delete row.dataset.originalMainStockName;
   delete row.dataset.editing;
+  row.classList.remove("editing-row");
 
   refreshSelectors();
   saveData();
@@ -1355,8 +1387,9 @@ window.addRow = function () {
   const transcendBlade = getValue("transcendBlade");
   const metalBlade = getValue("metalBlade");
   const aux = getValue("aux");
-  const fix = getValue("fix");
+  let fix = getValue("fix");
   const axis = getValue("axis");
+  fix = getNoRatchetFixValue(model, fix);
 
   let layer = "-";
   let lockPart = "-";
@@ -1552,6 +1585,34 @@ function getUsedParts() {
   return used;
 }
 
+function updateNoRatchetConfigOption() {
+  const modelInput = document.getElementById("confModel");
+  const fixSelect = document.getElementById(selectorMap["固鎖"]);
+
+  if (!modelInput || !fixSelect) return;
+
+  const noRatchet = isNoRatchetModel(modelInput.value);
+  let option = fixSelect.querySelector('option[value="-"]');
+
+  if (noRatchet) {
+    if (!option) {
+      option = document.createElement("option");
+      option.value = "-";
+      option.textContent = "無固鎖";
+      fixSelect.insertBefore(option, fixSelect.children[1] || null);
+    }
+
+    if (!fixSelect.value) {
+      fixSelect.value = "-";
+    }
+
+    return;
+  }
+
+  if (option) option.remove();
+  if (fixSelect.value === "-") fixSelect.value = "";
+}
+
 window.refreshSelectors = function () {
   const total = getTotalParts();
   const used = getUsedParts();
@@ -1584,10 +1645,12 @@ window.refreshSelectors = function () {
       sel.value = currentValue;
     }
   });
+
+  updateNoRatchetConfigOption();
 };
 
 function checkStock(type, name, total, used) {
-  if (!name) return true;
+  if (!name || name === "-") return true;
 
   const totalCount = total[type][name] || 0;
   const usedCount = used[type][name] || 0;
@@ -1622,8 +1685,9 @@ window.addConfig = function () {
   const transcendSel = document.getElementById("sel超越戰刃").value;
   const metalSel = document.getElementById("sel金屬戰刃").value;
   const auxSel = document.getElementById("sel輔助戰刃").value;
-  const fixSel = document.getElementById("sel固鎖").value;
+  let fixSel = document.getElementById("sel固鎖").value;
   const axisSel = document.getElementById("sel軸心").value;
+  fixSel = getNoRatchetFixValue(model, fixSel);
 
   let layer = "-";
   let lockPart = "-";
@@ -1694,7 +1758,7 @@ window.addConfig = function () {
     ["超越戰刃", transcendPart === "-" ? "" : transcendPart],
     ["金屬戰刃", metalPart === "-" ? "" : metalPart],
     ["輔助戰刃", auxPart === "-" ? "" : auxPart],
-    ["固鎖", fixSel],
+    ["固鎖", fixSel === "-" ? "" : fixSel],
     ["軸心", axisSel]
   ];
 
@@ -1895,9 +1959,15 @@ document.addEventListener("DOMContentLoaded", function () {
   const googleLoginBtn = document.getElementById("googleLoginBtn");
   const logoutBtn = document.getElementById("logoutBtn");
   const partCountInput = document.getElementById("partCount");
+  const configModelInput = document.getElementById("confModel");
 
   if (partCountInput) {
     preventInvalidPartCountInput(partCountInput);
+  }
+
+  if (configModelInput) {
+    configModelInput.addEventListener("input", updateNoRatchetConfigOption);
+    configModelInput.addEventListener("change", updateNoRatchetConfigOption);
   }
 
   if (googleLoginBtn) {
