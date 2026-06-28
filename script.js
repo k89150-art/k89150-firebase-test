@@ -181,7 +181,7 @@ const RANDOM_BOOSTER_MODELS = new Set([
   "BX-48", "CX-17", "BX-50", "CX-18"
 ]);
 
-const NO_RATCHET_MODELS = new Set(["CX-07", "UX-19"]);
+const NO_RATCHET_MODELS = new Set(["UX-19"]);
 
 function getRandomBoosterBaseModel(model) {
   const normalized = normalizeModel(model).toUpperCase().trim();
@@ -217,8 +217,22 @@ function isNoRatchetModel(model) {
   return NO_RATCHET_MODELS.has(getBaseModelCode(model));
 }
 
-function getNoRatchetFixValue(model, value) {
-  return isNoRatchetModel(model) && !value ? "-" : value;
+function getAxisCode(axis) {
+  const text = String(axis || "").trim();
+  const match = text.match(/^[A-Za-z]+/);
+  return match ? match[0].toUpperCase() : text.toUpperCase();
+}
+
+function isNoRatchetAxis(axis) {
+  return getAxisCode(axis) === "TR";
+}
+
+function shouldUseNoRatchet(model, axis) {
+  return isNoRatchetModel(model) || isNoRatchetAxis(axis);
+}
+
+function getNoRatchetFixValue(model, axis, value) {
+  return shouldUseNoRatchet(model, axis) && !value ? "-" : value;
 }
 
 function getSeriesFromModel(model) {
@@ -937,13 +951,14 @@ function buildConfigEditSelect(type, currentValue, editingRow) {
   const total = getTotalParts();
   const used = getUsedPartsExceptRow(editingRow);
   const model = normalizeModel(editingRow.cells[0]?.innerText.trim() || "");
+  const axis = getEditCellValue(editingRow, 8) || editingRow.cells[8]?.innerText.trim() || "";
 
   let html = `<select>`;
   html += `<option value="">不選擇</option>`;
 
   const names = new Set();
 
-  if (type === "固鎖" && isNoRatchetModel(model)) {
+  if (type === "固鎖" && shouldUseNoRatchet(model, axis)) {
     names.add("-");
   }
 
@@ -1024,7 +1039,7 @@ function saveConfigEditRow(button) {
   const auxSel = getEditCellValue(row, 6);
   let fixSel = getEditCellValue(row, 7);
   const axisSel = getEditCellValue(row, 8);
-  fixSel = getNoRatchetFixValue(model, fixSel);
+  fixSel = getNoRatchetFixValue(model, axisSel, fixSel);
 
   let layer = "-";
   let lockPart = "-";
@@ -1389,7 +1404,7 @@ window.addRow = function () {
   const aux = getValue("aux");
   let fix = getValue("fix");
   const axis = getValue("axis");
-  fix = getNoRatchetFixValue(model, fix);
+  fix = getNoRatchetFixValue(model, axis, fix);
 
   let layer = "-";
   let lockPart = "-";
@@ -1588,10 +1603,11 @@ function getUsedParts() {
 function updateNoRatchetConfigOption() {
   const modelInput = document.getElementById("confModel");
   const fixSelect = document.getElementById(selectorMap["固鎖"]);
+  const axisSelect = document.getElementById(selectorMap["軸心"]);
 
   if (!modelInput || !fixSelect) return;
 
-  const noRatchet = isNoRatchetModel(modelInput.value);
+  const noRatchet = shouldUseNoRatchet(modelInput.value, axisSelect?.value || "");
   let option = fixSelect.querySelector('option[value="-"]');
 
   if (noRatchet) {
@@ -1687,7 +1703,7 @@ window.addConfig = function () {
   const auxSel = document.getElementById("sel輔助戰刃").value;
   let fixSel = document.getElementById("sel固鎖").value;
   const axisSel = document.getElementById("sel軸心").value;
-  fixSel = getNoRatchetFixValue(model, fixSel);
+  fixSel = getNoRatchetFixValue(model, axisSel, fixSel);
 
   let layer = "-";
   let lockPart = "-";
@@ -1960,6 +1976,7 @@ document.addEventListener("DOMContentLoaded", function () {
   const logoutBtn = document.getElementById("logoutBtn");
   const partCountInput = document.getElementById("partCount");
   const configModelInput = document.getElementById("confModel");
+  const configAxisSelect = document.getElementById(selectorMap["軸心"]);
 
   if (partCountInput) {
     preventInvalidPartCountInput(partCountInput);
@@ -1968,6 +1985,10 @@ document.addEventListener("DOMContentLoaded", function () {
   if (configModelInput) {
     configModelInput.addEventListener("input", updateNoRatchetConfigOption);
     configModelInput.addEventListener("change", updateNoRatchetConfigOption);
+  }
+
+  if (configAxisSelect) {
+    configAxisSelect.addEventListener("change", updateNoRatchetConfigOption);
   }
 
   if (googleLoginBtn) {
