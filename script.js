@@ -235,6 +235,34 @@ function getNoRatchetFixValue(model, axis, value) {
   return shouldUseNoRatchet(model, axis) && !value ? "-" : value;
 }
 
+function isSimpleRatchet(ratchet) {
+  const text = String(ratchet || "").trim();
+  if (!text || text === "-") return false;
+
+  const codeMatch = text.match(/\d+\s*-\s*(\d+)/);
+  if (codeMatch) {
+    return codeMatch[1].endsWith("5");
+  }
+
+  return text.endsWith("5");
+}
+
+function validateRatchetRules(model, axis, ratchet) {
+  const fix = String(ratchet || "").trim();
+
+  if (isNoRatchetAxis(axis) && fix && fix !== "-") {
+    alert("Tr 軸無法使用固鎖。");
+    return false;
+  }
+
+  if (getBaseModelCode(model) === "UX-16" && !isSimpleRatchet(fix)) {
+    alert("時鐘幻象只能使用簡易固鎖");
+    return false;
+  }
+
+  return true;
+}
+
 function getSeriesFromModel(model) {
   const text = model.trim().toUpperCase();
 
@@ -1041,6 +1069,8 @@ function saveConfigEditRow(button) {
   const axisSel = getEditCellValue(row, 8);
   fixSel = getNoRatchetFixValue(model, axisSel, fixSel);
 
+  if (!validateRatchetRules(model, axisSel, fixSel)) return;
+
   let layer = "-";
   let lockPart = "-";
   let mainPart = "-";
@@ -1406,6 +1436,8 @@ window.addRow = function () {
   const axis = getValue("axis");
   fix = getNoRatchetFixValue(model, axis, fix);
 
+  if (!validateRatchetRules(model, axis, fix)) return;
+
   let layer = "-";
   let lockPart = "-";
   let mainPart = "-";
@@ -1704,6 +1736,8 @@ window.addConfig = function () {
   let fixSel = document.getElementById("sel固鎖").value;
   const axisSel = document.getElementById("sel軸心").value;
   fixSel = getNoRatchetFixValue(model, axisSel, fixSel);
+
+  if (!validateRatchetRules(model, axisSel, fixSel)) return;
 
   let layer = "-";
   let lockPart = "-";
