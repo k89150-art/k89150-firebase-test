@@ -65,6 +65,7 @@ function installAdminMenuGuard() {
   const items = [
     { href: "index.html", label: "陀螺配置", group: "工具" },
     { href: "tournament.html", label: "參賽紀錄", group: "工具" },
+    { href: "analysis.html", label: "配置分析", group: "工具" },
     { href: "home.html", label: "首頁", group: "說明" },
     { href: "guide.html", label: "使用教學", group: "說明" },
     { href: "changelog.html", label: "更新紀錄", group: "說明" },
