@@ -1,0 +1,1833 @@
+{
+  "meta": {
+    "name": "Beyblade X 零件分析資料庫",
+    "version": "0.2.0",
+    "created": "2026-06-29",
+    "purpose": "給 Codex 匯入網站使用：自由輸入玩家手上零件後，用零件資料即時計算配置，不是固定配置查表。",
+    "status": "目前已收集/分析可用的初版資料；不是最終完整大數據庫。未完全納入 WBO、Reddit、日本大型賽事與 YouTube 全量資料。",
+    "rules": [
+      "中文名以使用者指定中文網站資料為準；找不到就標待確認，不自行翻譯。",
+      "verifiedCombos 只作為加權參考，不限制玩家自由輸入配置。",
+      "未知或低資料零件仍可分析，但 evidenceLevel 要標示 theoretical/lowData。",
+      "推薦前必須先檢查 ownedParts，不能推薦玩家沒有的零件；可另列缺少零件的替代建議。"
+    ],
+    "sources": [
+      {
+        "name": "BeybladeHub combos",
+        "url": "https://beybladehub.app/combos",
+        "usage": "中文名稱、賽場/社群常用配置、高手零件評級、CX 推薦方向"
+      },
+      {
+        "name": "台灣天梯情報站",
+        "url": "https://stan-yao.github.io/beyblade_x_tier/",
+        "usage": "中文名稱與 Combo Summary 統計結構"
+      },
+      {
+        "name": "Takara Tomy official lineup",
+        "url": "https://beyblade.takaratomy.co.jp/beyblade-x/lineup/",
+        "usage": "官方產品/系列存在性"
+      }
+    ]
+  },
+  "blades": {
+    "鳳凰飛翼": {
+      "zhName": "鳳凰飛翼",
+      "enName": "Phoenix Wing",
+      "series": "BX",
+      "typeTags": [
+        "attack",
+        "balance"
+      ],
+      "scores": {
+        "attack": 8,
+        "defense": 6,
+        "stamina": 4.5,
+        "stability": 6.5,
+        "controlDifficulty": 6
+      },
+      "goodRatchets": [
+        "3-60",
+        "7-60",
+        "9-60"
+      ],
+      "goodBits": [
+        "R",
+        "LR"
+      ],
+      "badBits": [
+        "B",
+        "O",
+        "FB"
+      ],
+      "notes": "高重量攻擊/平衡，上蓋常見 9-60+R，適合積極進攻但需要發射力。",
+      "evidenceLevel": "multiSourceCommon",
+      "confidence": 0.72
+    },
+    "暴龍霸擊": {
+      "zhName": "暴龍霸擊",
+      "enName": "Tyranno Beat",
+      "series": "BX",
+      "typeTags": [
+        "attack"
+      ],
+      "scores": {
+        "attack": 8.5,
+        "defense": 4,
+        "stamina": 3.8,
+        "stability": 5.2,
+        "controlDifficulty": 7
+      },
+      "goodRatchets": [
+        "1-60",
+        "5-60",
+        "3-60"
+      ],
+      "goodBits": [
+        "R",
+        "LR",
+        "T",
+        "HT",
+        "I"
+      ],
+      "badBits": [
+        "B",
+        "O",
+        "FB"
+      ],
+      "notes": "前中期爆發攻擊。1-60+LR 為公開配置方向；5-60 提高容錯；I 可測但實戰支持不足。",
+      "evidenceLevel": "communityCommon",
+      "confidence": 0.68
+    },
+    "鮫鯊鋒鰭": {
+      "zhName": "鮫鯊鋒鰭",
+      "enName": "Shark Edge",
+      "series": "BX",
+      "typeTags": [
+        "attack",
+        "staminaAttack"
+      ],
+      "scores": {
+        "attack": 7.2,
+        "defense": 4.5,
+        "stamina": 5.5,
+        "stability": 5.5,
+        "controlDifficulty": 7
+      },
+      "goodRatchets": [
+        "9-60",
+        "4-55",
+        "1-60"
+      ],
+      "goodBits": [
+        "LF",
+        "UF",
+        "W",
+        "UN"
+      ],
+      "badBits": [
+        "B"
+      ],
+      "notes": "磨損後仍有穩定性，能做耐久攻擊混合，但很吃個體狀態。",
+      "evidenceLevel": "communityCommon",
+      "confidence": 0.58
+    },
+    "巨鯨怒濤": {
+      "zhName": "巨鯨怒濤",
+      "enName": "Whale Wave",
+      "series": "BX",
+      "typeTags": [
+        "balance",
+        "weightControl"
+      ],
+      "scores": {
+        "attack": 6.5,
+        "defense": 6.5,
+        "stamina": 5.5,
+        "stability": 6.5,
+        "controlDifficulty": 5
+      },
+      "goodRatchets": [
+        "5-60",
+        "1-60"
+      ],
+      "goodBits": [
+        "F",
+        "L"
+      ],
+      "badBits": [],
+      "notes": "靠重量與位置壓縮對手旋轉空間，偏封鎖/均衡。",
+      "evidenceLevel": "communityCommon",
+      "confidence": 0.57
+    },
+    "蒼穹龍騎士": {
+      "zhName": "蒼穹龍騎士",
+      "enName": "Cobalt Dragoon",
+      "series": "BX",
+      "typeTags": [
+        "leftSpin",
+        "balance"
+      ],
+      "scores": {
+        "attack": 6.2,
+        "defense": 5.5,
+        "stamina": 6.2,
+        "stability": 6.5,
+        "controlDifficulty": 5
+      },
+      "goodRatchets": [
+        "5-60",
+        "7-60"
+      ],
+      "goodBits": [
+        "E",
+        "L"
+      ],
+      "badBits": [],
+      "notes": "左迴轉均衡，5-60+E 方向靠穩定與持久等對手失誤。",
+      "evidenceLevel": "communityCommon",
+      "confidence": 0.6
+    },
+    "武士魂斬": {
+      "zhName": "武士魂斬",
+      "enName": "Samurai Calibur",
+      "series": "BX",
+      "typeTags": [
+        "balance"
+      ],
+      "scores": {
+        "attack": 6,
+        "defense": 5.5,
+        "stamina": 6,
+        "stability": 6.2,
+        "controlDifficulty": 5
+      },
+      "goodRatchets": [
+        "7-70"
+      ],
+      "goodBits": [
+        "T"
+      ],
+      "badBits": [],
+      "notes": "偏穩健均衡，7-70+T 有重量感與尾速。",
+      "evidenceLevel": "lowData",
+      "confidence": 0.45
+    },
+    "蒼龍爆刃": {
+      "zhName": "蒼龍爆刃",
+      "enName": "Dran Buster",
+      "series": "UX",
+      "typeTags": [
+        "attack",
+        "highRisk"
+      ],
+      "scores": {
+        "attack": 9.2,
+        "defense": 3.5,
+        "stamina": 3,
+        "stability": 4.5,
+        "controlDifficulty": 8
+      },
+      "goodRatchets": [
+        "1-60",
+        "3-60",
+        "9-60"
+      ],
+      "goodBits": [
+        "R",
+        "LR",
+        "K",
+        "T"
+      ],
+      "badBits": [
+        "B",
+        "O",
+        "FB"
+      ],
+      "notes": "超偏心高爆發攻擊。1-60+LR 高風險高報酬，抽速不足時會掉很多。",
+      "evidenceLevel": "multiSourceCommon",
+      "confidence": 0.72
+    },
+    "魔導神杖": {
+      "zhName": "魔導神杖",
+      "enName": "Wizard Rod",
+      "series": "UX",
+      "typeTags": [
+        "stamina",
+        "balance"
+      ],
+      "scores": {
+        "attack": 4.5,
+        "defense": 6.5,
+        "stamina": 8.5,
+        "stability": 8,
+        "controlDifficulty": 3
+      },
+      "goodRatchets": [
+        "1-60",
+        "3-60",
+        "9-60",
+        "6-60"
+      ],
+      "goodBits": [
+        "B",
+        "O",
+        "H",
+        "FB",
+        "UN"
+      ],
+      "badBits": [
+        "LF",
+        "LR"
+      ],
+      "notes": "持久/穩定核心。3-60+H、B/O/FB/UN 等均可依打法使用。",
+      "evidenceLevel": "multiSourceCommon",
+      "confidence": 0.78
+    },
+    "鮫鯊狂鱗": {
+      "zhName": "鮫鯊狂鱗",
+      "enName": "Shark Scale",
+      "series": "UX",
+      "typeTags": [
+        "attack"
+      ],
+      "scores": {
+        "attack": 8.2,
+        "defense": 4.2,
+        "stamina": 4,
+        "stability": 5,
+        "controlDifficulty": 7
+      },
+      "goodRatchets": [
+        "4-50",
+        "1-60",
+        "1-70"
+      ],
+      "goodBits": [
+        "UF",
+        "K",
+        "L",
+        "R",
+        "LO",
+        "W",
+        "D"
+      ],
+      "badBits": [
+        "B"
+      ],
+      "notes": "低重心與 K/UF 類攻擊節奏佳，攻擊效率高但需補持久。",
+      "evidenceLevel": "communityCommon",
+      "confidence": 0.62
+    },
+    "騎士圓甲": {
+      "zhName": "騎士圓甲",
+      "enName": "Knight Mail",
+      "series": "UX",
+      "typeTags": [
+        "attack",
+        "balance"
+      ],
+      "scores": {
+        "attack": 7.2,
+        "defense": 6.2,
+        "stamina": 4.8,
+        "stability": 6.2,
+        "controlDifficulty": 6
+      },
+      "goodRatchets": [
+        "3-60",
+        "7-70",
+        "9-60"
+      ],
+      "goodBits": [
+        "R",
+        "GB",
+        "W"
+      ],
+      "badBits": [
+        "B"
+      ],
+      "notes": "9-60+R 為速攻方向，9 凸固鎖有爆裂耐受。",
+      "evidenceLevel": "communityCommon",
+      "confidence": 0.6
+    },
+    "霜輝銀狼": {
+      "zhName": "霜輝銀狼",
+      "enName": "Silver Wolf",
+      "series": "UX",
+      "typeTags": [
+        "stamina",
+        "balance"
+      ],
+      "scores": {
+        "attack": 5.5,
+        "defense": 6.5,
+        "stamina": 7.2,
+        "stability": 7.2,
+        "controlDifficulty": 4
+      },
+      "goodRatchets": [
+        "3-60",
+        "5-60",
+        "7-70",
+        "9-60"
+      ],
+      "goodBits": [
+        "B",
+        "FB",
+        "H"
+      ],
+      "badBits": [
+        "LF"
+      ],
+      "notes": "持久/平衡方向，FB 路線更自由但需要判斷進攻時機。",
+      "evidenceLevel": "communityCommon",
+      "confidence": 0.62
+    },
+    "衝擊龍神": {
+      "zhName": "衝擊龍神",
+      "enName": "Impact Drake",
+      "series": "UX",
+      "typeTags": [
+        "attack",
+        "weight"
+      ],
+      "scores": {
+        "attack": 9,
+        "defense": 4.5,
+        "stamina": 3.8,
+        "stability": 5,
+        "controlDifficulty": 7
+      },
+      "goodRatchets": [
+        "1-60",
+        "5-60",
+        "7-80"
+      ],
+      "goodBits": [
+        "T",
+        "U",
+        "Z"
+      ],
+      "badBits": [
+        "B",
+        "O"
+      ],
+      "notes": "重量型單次衝撞，T 穩定等一擊，Over Finish 潛力高但吃轉速。",
+      "evidenceLevel": "communityCommon",
+      "confidence": 0.6
+    },
+    "天蠍長矛": {
+      "zhName": "天蠍長矛",
+      "enName": "Scorpio Spear",
+      "series": "UX",
+      "typeTags": [
+        "balance",
+        "weight"
+      ],
+      "scores": {
+        "attack": 6.8,
+        "defense": 6.8,
+        "stamina": 6.3,
+        "stability": 6.2,
+        "controlDifficulty": 6
+      },
+      "goodRatchets": [
+        "7-60",
+        "3-60"
+      ],
+      "goodBits": [
+        "T",
+        "U",
+        "LR"
+      ],
+      "badBits": [],
+      "notes": "重型均衡。轉速不足時重量可能成負擔。",
+      "evidenceLevel": "communityCommon",
+      "confidence": 0.55
+    },
+    "魔像奇岩": {
+      "zhName": "魔像奇岩",
+      "enName": "Golem Rock",
+      "series": "UX",
+      "typeTags": [
+        "defense",
+        "counter"
+      ],
+      "scores": {
+        "attack": 5.2,
+        "defense": 7.5,
+        "stamina": 5.5,
+        "stability": 6.5,
+        "controlDifficulty": 5
+      },
+      "goodRatchets": [
+        "1-60",
+        "6-60",
+        "9-60"
+      ],
+      "goodBits": [
+        "Q",
+        "LR",
+        "LO"
+      ],
+      "badBits": [],
+      "notes": "防守反擊，可用主動軸尋找反擊，但非純持久。",
+      "evidenceLevel": "communityCommon",
+      "confidence": 0.52
+    },
+    "隕星龍騎士": {
+      "zhName": "隕星龍騎士",
+      "enName": "Meteor Dragoon",
+      "series": "UX",
+      "typeTags": [
+        "balance",
+        "leftSpin"
+      ],
+      "scores": {
+        "attack": 6,
+        "defense": 6,
+        "stamina": 6.8,
+        "stability": 7,
+        "controlDifficulty": 4
+      },
+      "goodRatchets": [
+        "5-70",
+        "9-60"
+      ],
+      "goodBits": [
+        "L",
+        "E"
+      ],
+      "badBits": [],
+      "notes": "均衡旗艦，5-70+L 偏穩定耐久與反擊。",
+      "evidenceLevel": "communityCommon",
+      "confidence": 0.55
+    },
+    "武士星劍": {
+      "zhName": "武士星劍",
+      "enName": "Samurai Saber",
+      "series": "UX",
+      "typeTags": [
+        "attack"
+      ],
+      "scores": {
+        "attack": 7.8,
+        "defense": 4.8,
+        "stamina": 4.8,
+        "stability": 5.8,
+        "controlDifficulty": 6
+      },
+      "goodRatchets": [
+        "1-60",
+        "3-60",
+        "9-60"
+      ],
+      "goodBits": [
+        "E",
+        "P",
+        "LR"
+      ],
+      "badBits": [
+        "B"
+      ],
+      "notes": "9-60+LR 速攻節奏，刃型連打較精準。",
+      "evidenceLevel": "communityCommon",
+      "confidence": 0.6
+    },
+    "爆擊": {
+      "zhName": "爆擊",
+      "enName": "Blast",
+      "series": "CX",
+      "typeTags": [
+        "attack",
+        "cxMain"
+      ],
+      "scores": {
+        "attack": 8.2,
+        "defense": 5,
+        "stamina": 4.2,
+        "stability": 5.6,
+        "controlDifficulty": 7
+      },
+      "goodRatchets": [
+        "3-60",
+        "4-50",
+        "7-70",
+        "7-60",
+        "6-60"
+      ],
+      "goodBits": [
+        "H",
+        "LR",
+        "T"
+      ],
+      "badBits": [],
+      "notes": "CX 主刃，J/H/W 等輔助可走標準攻擊或重型攻擊。",
+      "evidenceLevel": "cxCommunityCommon",
+      "confidence": 0.58
+    },
+    "威能": {
+      "zhName": "威能",
+      "enName": "Power",
+      "series": "CX",
+      "typeTags": [
+        "defense",
+        "weight",
+        "cxMain"
+      ],
+      "scores": {
+        "attack": 6,
+        "defense": 7.8,
+        "stamina": 5.5,
+        "stability": 6,
+        "controlDifficulty": 7
+      },
+      "goodRatchets": [
+        "7-60"
+      ],
+      "goodBits": [
+        "H",
+        "LR"
+      ],
+      "badBits": [],
+      "notes": "重型防守/均衡。重型變體高重量但很吃抽速。",
+      "evidenceLevel": "cxCommunityCommon",
+      "confidence": 0.55
+    },
+    "九尾": {
+      "zhName": "九尾",
+      "enName": "Nine Tails",
+      "series": "CX",
+      "typeTags": [
+        "attack",
+        "cxMain"
+      ],
+      "scores": {
+        "attack": 7.5,
+        "defense": 4.8,
+        "stamina": 4.5,
+        "stability": 5.5,
+        "controlDifficulty": 6
+      },
+      "goodRatchets": [
+        "1-60",
+        "6-60"
+      ],
+      "goodBits": [
+        "LR",
+        "H"
+      ],
+      "badBits": [],
+      "notes": "J+1-60+LR 為 CX 攻擊方向。",
+      "evidenceLevel": "cxCommunityCommon",
+      "confidence": 0.55
+    },
+    "獵魂": {
+      "zhName": "獵魂",
+      "enName": "Hunt",
+      "series": "CX",
+      "typeTags": [
+        "stamina",
+        "cxMain"
+      ],
+      "scores": {
+        "attack": 4.5,
+        "defense": 6.2,
+        "stamina": 7.5,
+        "stability": 7.2,
+        "controlDifficulty": 4
+      },
+      "goodRatchets": [
+        "9-60"
+      ],
+      "goodBits": [
+        "E"
+      ],
+      "badBits": [
+        "LR"
+      ],
+      "notes": "S 輔助+9-60+E 偏耐久，靠旋轉壓制。",
+      "evidenceLevel": "cxCommunityCommon",
+      "confidence": 0.52
+    },
+    "勇氣": {
+      "zhName": "勇氣",
+      "enName": "Brave",
+      "series": "CX",
+      "typeTags": [
+        "balance",
+        "attack",
+        "cxMain"
+      ],
+      "scores": {
+        "attack": 7,
+        "defense": 6.5,
+        "stamina": 5.2,
+        "stability": 6.2,
+        "controlDifficulty": 5
+      },
+      "goodRatchets": [
+        "1-60",
+        "7-60",
+        "3-60"
+      ],
+      "goodBits": [
+        "R",
+        "LR",
+        "K",
+        "A"
+      ],
+      "badBits": [],
+      "notes": "B 輔助有高復活率，攻守兼備，適合 CX 新手嘗試。",
+      "evidenceLevel": "cxCommunityCommon",
+      "confidence": 0.55
+    },
+    "幽冥": {
+      "zhName": "幽冥",
+      "enName": "Phantom",
+      "series": "CX",
+      "typeTags": [
+        "stamina",
+        "defense",
+        "cxMain"
+      ],
+      "scores": {
+        "attack": 4.5,
+        "defense": 7,
+        "stamina": 7.5,
+        "stability": 7,
+        "controlDifficulty": 4
+      },
+      "goodRatchets": [
+        "7-60"
+      ],
+      "goodBits": [
+        "T"
+      ],
+      "badBits": [
+        "LR"
+      ],
+      "notes": "S 低重心+7-60+T，穩定防守耐久。",
+      "evidenceLevel": "cxCommunityCommon",
+      "confidence": 0.5
+    },
+    "騎士堡壘": {
+      "zhName": "騎士堡壘",
+      "enName": "Knight Fortress",
+      "series": "CX",
+      "typeTags": [
+        "defense",
+        "balance",
+        "cxBase"
+      ],
+      "scores": {
+        "attack": 4.5,
+        "defense": 8,
+        "stamina": 5.5,
+        "stability": 7,
+        "controlDifficulty": 4
+      },
+      "goodRatchets": [
+        "9-60",
+        "7-60",
+        "5-60",
+        "8-70"
+      ],
+      "goodBits": [
+        "H",
+        "UN",
+        "B",
+        "O"
+      ],
+      "badBits": [
+        "LF",
+        "LR"
+      ],
+      "notes": "偏防禦與站場，適合防禦平衡；高固鎖注意後段晃動。",
+      "evidenceLevel": "theoretical+officialExistence",
+      "confidence": 0.45
+    }
+  },
+  "ratchets": {
+    "1-60": {
+      "id": "1-60",
+      "height": 60,
+      "typeTags": [
+        "attack"
+      ],
+      "modifiers": {
+        "attack": 1.5,
+        "defense": -0.5,
+        "stamina": -0.5,
+        "stability": -0.3,
+        "burstRisk": 0.3
+      },
+      "notes": "撞擊集中、爆發高，但容錯低。",
+      "evidenceLevel": "tierListed",
+      "confidence": 0.55
+    },
+    "1-50": {
+      "id": "1-50",
+      "height": 50,
+      "typeTags": [
+        "attack",
+        "low"
+      ],
+      "modifiers": {
+        "attack": 1.6,
+        "defense": -0.4,
+        "stamina": -0.4,
+        "stability": 0.2,
+        "burstRisk": 0.2
+      },
+      "notes": "更低重心攻擊，需注意與上層/軸心相性。",
+      "evidenceLevel": "tierListed",
+      "confidence": 0.55
+    },
+    "3-60": {
+      "id": "3-60",
+      "height": 60,
+      "typeTags": [
+        "attack",
+        "balance"
+      ],
+      "modifiers": {
+        "attack": 1,
+        "defense": 0.2,
+        "stamina": 0,
+        "stability": 0.5,
+        "burstRisk": 0
+      },
+      "notes": "泛用攻擊/平衡固鎖。",
+      "evidenceLevel": "tierListed",
+      "confidence": 0.55
+    },
+    "4-50": {
+      "id": "4-50",
+      "height": 50,
+      "typeTags": [
+        "attack",
+        "low"
+      ],
+      "modifiers": {
+        "attack": 1.2,
+        "defense": 0,
+        "stamina": -0.2,
+        "stability": 0.8,
+        "burstRisk": 0
+      },
+      "notes": "低重心，常見於攻擊效率高的配置。",
+      "evidenceLevel": "tierListed",
+      "confidence": 0.55
+    },
+    "4-55": {
+      "id": "4-55",
+      "height": 55,
+      "typeTags": [
+        "attack",
+        "balance",
+        "low"
+      ],
+      "modifiers": {
+        "attack": 0.9,
+        "defense": 0.2,
+        "stamina": 0,
+        "stability": 0.7,
+        "burstRisk": 0
+      },
+      "notes": "低重心，可做攻擊/耐久混合。",
+      "evidenceLevel": "tierListed",
+      "confidence": 0.55
+    },
+    "5-60": {
+      "id": "5-60",
+      "height": 60,
+      "typeTags": [
+        "attack",
+        "balance"
+      ],
+      "modifiers": {
+        "attack": 1,
+        "defense": 0.5,
+        "stamina": 0,
+        "stability": 1,
+        "burstRisk": -0.5
+      },
+      "notes": "泛用、穩定，攻擊與平衡都可用。",
+      "evidenceLevel": "tierListed",
+      "confidence": 0.55
+    },
+    "5-70": {
+      "id": "5-70",
+      "height": 70,
+      "typeTags": [
+        "balance"
+      ],
+      "modifiers": {
+        "attack": 0.3,
+        "defense": 0.6,
+        "stamina": 0.3,
+        "stability": 0.2,
+        "burstRisk": 0
+      },
+      "notes": "較高身位的均衡固鎖，需注意被抬起。",
+      "evidenceLevel": "tierListed",
+      "confidence": 0.55
+    },
+    "6-60": {
+      "id": "6-60",
+      "height": 60,
+      "typeTags": [
+        "stamina",
+        "balance"
+      ],
+      "modifiers": {
+        "attack": 0.2,
+        "defense": 0.5,
+        "stamina": 0.6,
+        "stability": 0.8,
+        "burstRisk": -0.2
+      },
+      "notes": "穩定/持久補正。",
+      "evidenceLevel": "tierListed",
+      "confidence": 0.55
+    },
+    "7-60": {
+      "id": "7-60",
+      "height": 60,
+      "typeTags": [
+        "defense",
+        "balance"
+      ],
+      "modifiers": {
+        "attack": 0,
+        "defense": 1,
+        "stamina": 0.5,
+        "stability": 1,
+        "burstRisk": -0.3
+      },
+      "notes": "穩定性佳，防禦/平衡常用。",
+      "evidenceLevel": "tierListed",
+      "confidence": 0.55
+    },
+    "7-70": {
+      "id": "7-70",
+      "height": 70,
+      "typeTags": [
+        "balance",
+        "weight"
+      ],
+      "modifiers": {
+        "attack": 0.2,
+        "defense": 0.8,
+        "stamina": 0.2,
+        "stability": 0,
+        "burstRisk": 0
+      },
+      "notes": "高重量/高身位方向，重心風險需評估。",
+      "evidenceLevel": "tierListed",
+      "confidence": 0.55
+    },
+    "7-80": {
+      "id": "7-80",
+      "height": 80,
+      "typeTags": [
+        "weight",
+        "high"
+      ],
+      "modifiers": {
+        "attack": 0.3,
+        "defense": 0.8,
+        "stamina": 0,
+        "stability": -0.8,
+        "burstRisk": 0.2
+      },
+      "notes": "高身位，搭重型攻擊需抽速支撐。",
+      "evidenceLevel": "tierListed",
+      "confidence": 0.55
+    },
+    "8-70": {
+      "id": "8-70",
+      "height": 70,
+      "typeTags": [
+        "defense",
+        "balance"
+      ],
+      "modifiers": {
+        "attack": 0,
+        "defense": 1,
+        "stamina": 0,
+        "stability": -0.5,
+        "burstRisk": 0
+      },
+      "notes": "偏防禦但高度較高，後段晃動與被抬起需注意。",
+      "evidenceLevel": "tierListed",
+      "confidence": 0.55
+    },
+    "9-60": {
+      "id": "9-60",
+      "height": 60,
+      "typeTags": [
+        "defense",
+        "stamina",
+        "balance"
+      ],
+      "modifiers": {
+        "attack": 0,
+        "defense": 1,
+        "stamina": 1,
+        "stability": 1.5,
+        "burstRisk": -0.5
+      },
+      "notes": "低重心、穩定、泛用。",
+      "evidenceLevel": "tierListed",
+      "confidence": 0.55
+    },
+    "9-70": {
+      "id": "9-70",
+      "height": 70,
+      "typeTags": [
+        "defense",
+        "stamina"
+      ],
+      "modifiers": {
+        "attack": 0,
+        "defense": 1,
+        "stamina": 0.7,
+        "stability": 0.2,
+        "burstRisk": -0.2
+      },
+      "notes": "較高身位的防禦/持久。",
+      "evidenceLevel": "tierListed",
+      "confidence": 0.55
+    },
+    "1-70": {
+      "id": "1-70",
+      "height": 70,
+      "typeTags": [
+        "attack",
+        "high"
+      ],
+      "modifiers": {
+        "attack": 1.2,
+        "defense": -0.4,
+        "stamina": -0.5,
+        "stability": -0.7,
+        "burstRisk": 0.3
+      },
+      "notes": "高身位攻擊，風險較大。",
+      "evidenceLevel": "tierListed",
+      "confidence": 0.55
+    }
+  },
+  "bits": {
+    "R": {
+      "id": "R",
+      "typeTags": [
+        "attack",
+        "stableAttack"
+      ],
+      "modifiers": {
+        "attack": 1.3,
+        "defense": 0,
+        "stamina": -0.5,
+        "stability": 0.2,
+        "controlDifficulty": 5
+      },
+      "notes": "穩定攻擊軸，攻擊配置常見。",
+      "evidenceLevel": "tierTop",
+      "confidence": 0.75
+    },
+    "LR": {
+      "id": "LR",
+      "typeTags": [
+        "attack",
+        "highBurst"
+      ],
+      "modifiers": {
+        "attack": 2,
+        "defense": -0.5,
+        "stamina": -1,
+        "stability": -0.5,
+        "controlDifficulty": 8
+      },
+      "notes": "高爆發速攻，吃發射力，容易提前失速。",
+      "evidenceLevel": "tierTop",
+      "confidence": 0.72
+    },
+    "H": {
+      "id": "H",
+      "typeTags": [
+        "defense",
+        "balance"
+      ],
+      "modifiers": {
+        "attack": 0,
+        "defense": 1.5,
+        "stamina": 0,
+        "stability": 1,
+        "controlDifficulty": 4
+      },
+      "notes": "防禦平衡，抗打穩定，但純持久不一定勝 B/O/FB。",
+      "evidenceLevel": "tierTop",
+      "confidence": 0.75
+    },
+    "FB": {
+      "id": "FB",
+      "typeTags": [
+        "stamina",
+        "freeMovement"
+      ],
+      "modifiers": {
+        "attack": -1,
+        "defense": 0.5,
+        "stamina": 1.8,
+        "stability": 1,
+        "controlDifficulty": 3
+      },
+      "notes": "自由球型持久/穩定，部分配置路線自由。",
+      "evidenceLevel": "tierTop",
+      "confidence": 0.72
+    },
+    "B": {
+      "id": "B",
+      "typeTags": [
+        "stamina"
+      ],
+      "modifiers": {
+        "attack": -1,
+        "defense": 0.5,
+        "stamina": 2,
+        "stability": 1,
+        "controlDifficulty": 3
+      },
+      "notes": "持久佳、攻擊低。",
+      "evidenceLevel": "tierHigh",
+      "confidence": 0.68
+    },
+    "O": {
+      "id": "O",
+      "typeTags": [
+        "stamina",
+        "stable"
+      ],
+      "modifiers": {
+        "attack": -0.8,
+        "defense": 0.5,
+        "stamina": 1.7,
+        "stability": 1,
+        "controlDifficulty": 3
+      },
+      "notes": "穩定持久軸。",
+      "evidenceLevel": "communityCommon",
+      "confidence": 0.62
+    },
+    "E": {
+      "id": "E",
+      "typeTags": [
+        "stamina",
+        "balance",
+        "elevate"
+      ],
+      "modifiers": {
+        "attack": 0.2,
+        "defense": 0,
+        "stamina": 1,
+        "stability": 0.6,
+        "controlDifficulty": 4
+      },
+      "notes": "揚升/均衡持久方向。",
+      "evidenceLevel": "tierHigh",
+      "confidence": 0.62
+    },
+    "L": {
+      "id": "L",
+      "typeTags": [
+        "balance",
+        "stamina"
+      ],
+      "modifiers": {
+        "attack": 0.3,
+        "defense": 0,
+        "stamina": 1,
+        "stability": 0.6,
+        "controlDifficulty": 4
+      },
+      "notes": "水平/耐久拉長方向。",
+      "evidenceLevel": "tierHigh",
+      "confidence": 0.6
+    },
+    "LO": {
+      "id": "LO",
+      "typeTags": [
+        "balance",
+        "stamina"
+      ],
+      "modifiers": {
+        "attack": 0.2,
+        "defense": 0,
+        "stamina": 1.2,
+        "stability": 0.7,
+        "controlDifficulty": 4
+      },
+      "notes": "偏持久/穩定。",
+      "evidenceLevel": "tierHigh",
+      "confidence": 0.55
+    },
+    "K": {
+      "id": "K",
+      "typeTags": [
+        "attack",
+        "kick"
+      ],
+      "modifiers": {
+        "attack": 1.5,
+        "defense": -0.2,
+        "stamina": -0.5,
+        "stability": 0,
+        "controlDifficulty": 7
+      },
+      "notes": "踢擊軸，攻擊節奏特殊。",
+      "evidenceLevel": "tierHigh",
+      "confidence": 0.6
+    },
+    "J": {
+      "id": "J",
+      "typeTags": [
+        "attack"
+      ],
+      "modifiers": {
+        "attack": 1.4,
+        "defense": -0.3,
+        "stamina": -0.5,
+        "stability": -0.2,
+        "controlDifficulty": 7
+      },
+      "notes": "偏攻擊，高機動但需控。",
+      "evidenceLevel": "tierHigh",
+      "confidence": 0.55
+    },
+    "T": {
+      "id": "T",
+      "typeTags": [
+        "balance",
+        "stamina"
+      ],
+      "modifiers": {
+        "attack": 0.4,
+        "defense": 0.3,
+        "stamina": 1,
+        "stability": 0.8,
+        "controlDifficulty": 4
+      },
+      "notes": "錐底/耐久平衡，穩定等一擊或打尾速。",
+      "evidenceLevel": "communityCommon",
+      "confidence": 0.62
+    },
+    "HT": {
+      "id": "HT",
+      "typeTags": [
+        "balance",
+        "defense"
+      ],
+      "modifiers": {
+        "attack": 0.3,
+        "defense": 0.8,
+        "stamina": 0.5,
+        "stability": 0.8,
+        "controlDifficulty": 4
+      },
+      "notes": "平衡/防禦補正。",
+      "evidenceLevel": "communityCommon",
+      "confidence": 0.5
+    },
+    "I": {
+      "id": "I",
+      "typeTags": [
+        "attack",
+        "experimental"
+      ],
+      "modifiers": {
+        "attack": 1.5,
+        "defense": -0.5,
+        "stamina": -1,
+        "stability": -0.5,
+        "controlDifficulty": 7
+      },
+      "notes": "攻擊方向可用，但主流實戰支持不足；可能空轉、撞牆、失速。",
+      "evidenceLevel": "lowData",
+      "confidence": 0.42
+    },
+    "LF": {
+      "id": "LF",
+      "typeTags": [
+        "attack",
+        "lowFlat"
+      ],
+      "modifiers": {
+        "attack": 1.8,
+        "defense": -0.8,
+        "stamina": -1.2,
+        "stability": -0.8,
+        "controlDifficulty": 8
+      },
+      "notes": "高速攻擊，風險高。",
+      "evidenceLevel": "communityCommon",
+      "confidence": 0.55
+    },
+    "F": {
+      "id": "F",
+      "typeTags": [
+        "flat",
+        "controlAttack"
+      ],
+      "modifiers": {
+        "attack": 1,
+        "defense": -0.2,
+        "stamina": -0.7,
+        "stability": -0.2,
+        "controlDifficulty": 6
+      },
+      "notes": "平底移動，可做封鎖/主動移動。",
+      "evidenceLevel": "communityCommon",
+      "confidence": 0.5
+    },
+    "UF": {
+      "id": "UF",
+      "typeTags": [
+        "attack"
+      ],
+      "modifiers": {
+        "attack": 1.7,
+        "defense": -0.6,
+        "stamina": -1,
+        "stability": -0.6,
+        "controlDifficulty": 8
+      },
+      "notes": "高速攻擊，持久風險。",
+      "evidenceLevel": "communityCommon",
+      "confidence": 0.5
+    },
+    "UN": {
+      "id": "UN",
+      "typeTags": [
+        "defense",
+        "balance"
+      ],
+      "modifiers": {
+        "attack": 0.1,
+        "defense": 1,
+        "stamina": 0.5,
+        "stability": 0.8,
+        "controlDifficulty": 4
+      },
+      "notes": "防禦/平衡可用，常作穩定替代。",
+      "evidenceLevel": "tierListed",
+      "confidence": 0.55
+    },
+    "W": {
+      "id": "W",
+      "typeTags": [
+        "balance"
+      ],
+      "modifiers": {
+        "attack": 0.4,
+        "defense": 0.3,
+        "stamina": 0.4,
+        "stability": 0.3,
+        "controlDifficulty": 5
+      },
+      "notes": "泛用平衡/路線變化，需看上層。",
+      "evidenceLevel": "communityCommon",
+      "confidence": 0.45
+    },
+    "D": {
+      "id": "D",
+      "typeTags": [
+        "defense"
+      ],
+      "modifiers": {
+        "attack": -0.2,
+        "defense": 1,
+        "stamina": 0,
+        "stability": 0.6,
+        "controlDifficulty": 4
+      },
+      "notes": "防禦方向，攻擊不足。",
+      "evidenceLevel": "lowData",
+      "confidence": 0.4
+    },
+    "GB": {
+      "id": "GB",
+      "typeTags": [
+        "defense",
+        "balance"
+      ],
+      "modifiers": {
+        "attack": 0,
+        "defense": 1.2,
+        "stamina": 0.2,
+        "stability": 0.7,
+        "controlDifficulty": 4
+      },
+      "notes": "防禦/平衡，適合抗打。",
+      "evidenceLevel": "communityCommon",
+      "confidence": 0.45
+    },
+    "U": {
+      "id": "U",
+      "typeTags": [
+        "balance"
+      ],
+      "modifiers": {
+        "attack": 0.4,
+        "defense": 0.4,
+        "stamina": 0.4,
+        "stability": 0.5,
+        "controlDifficulty": 5
+      },
+      "notes": "均衡軸，需個別配置測試。",
+      "evidenceLevel": "communityCommon",
+      "confidence": 0.45
+    },
+    "Z": {
+      "id": "Z",
+      "typeTags": [
+        "attack",
+        "balance"
+      ],
+      "modifiers": {
+        "attack": 0.8,
+        "defense": 0,
+        "stamina": -0.2,
+        "stability": 0,
+        "controlDifficulty": 6
+      },
+      "notes": "攻擊/平衡補正，需資料補強。",
+      "evidenceLevel": "lowData",
+      "confidence": 0.35
+    },
+    "Q": {
+      "id": "Q",
+      "typeTags": [
+        "counter",
+        "defense"
+      ],
+      "modifiers": {
+        "attack": 0.5,
+        "defense": 0.6,
+        "stamina": 0.2,
+        "stability": 0.2,
+        "controlDifficulty": 6
+      },
+      "notes": "防守反擊方向，需個別測。",
+      "evidenceLevel": "communityCommon",
+      "confidence": 0.4
+    },
+    "A": {
+      "id": "A",
+      "typeTags": [
+        "attack",
+        "highSpeed"
+      ],
+      "modifiers": {
+        "attack": 1.5,
+        "defense": -0.5,
+        "stamina": -0.8,
+        "stability": -0.5,
+        "controlDifficulty": 8
+      },
+      "notes": "高抽速條件下可用，低抽速風險高。",
+      "evidenceLevel": "communityCommon",
+      "confidence": 0.4
+    },
+    "P": {
+      "id": "P",
+      "typeTags": [
+        "balance",
+        "point"
+      ],
+      "modifiers": {
+        "attack": 0.8,
+        "defense": 0.3,
+        "stamina": 0.3,
+        "stability": 0.5,
+        "controlDifficulty": 5
+      },
+      "notes": "平衡/攻擊控場。",
+      "evidenceLevel": "communityCommon",
+      "confidence": 0.5
+    }
+  },
+  "cxParts": {
+    "locks": {},
+    "mainBlades": {},
+    "overBlades": {
+      "F": {
+        "id": "F",
+        "typeTags": [
+          "contactVariation",
+          "counter"
+        ],
+        "modifiers": {
+          "attack": 0.5,
+          "defense": 0.2,
+          "stamina": -0.1,
+          "stability": -0.1
+        },
+        "notes": "超越戰刃；增加接觸變化與反擊性，但可能降低純防禦圓滑度。",
+        "evidenceLevel": "theoretical",
+        "confidence": 0.35
+      }
+    },
+    "metalBlades": {},
+    "assistBlades": {
+      "J": {
+        "id": "J",
+        "typeTags": [
+          "attack",
+          "lift"
+        ],
+        "modifiers": {
+          "attack": 1.3,
+          "defense": -0.2,
+          "stamina": -0.3,
+          "stability": -0.2
+        },
+        "notes": "斜切/鏟起型輔助，CX 攻擊常見強勢輔助。",
+        "evidenceLevel": "cxCommunityCommon",
+        "confidence": 0.45
+      },
+      "H": {
+        "id": "H",
+        "typeTags": [
+          "heavy",
+          "attack",
+          "balance"
+        ],
+        "modifiers": {
+          "attack": 0.8,
+          "defense": 0.8,
+          "stamina": -0.2,
+          "stability": -0.4
+        },
+        "notes": "重型輔助，突破高重量但非常吃抽速。",
+        "evidenceLevel": "cxCommunityCommon",
+        "confidence": 0.45
+      },
+      "W": {
+        "id": "W",
+        "typeTags": [
+          "wheel",
+          "defense",
+          "stamina"
+        ],
+        "modifiers": {
+          "attack": 0,
+          "defense": 0.9,
+          "stamina": 0.8,
+          "stability": 0.5
+        },
+        "notes": "車輪輔助，偏耐久防守與重量穩定。",
+        "evidenceLevel": "cxCommunityCommon",
+        "confidence": 0.45
+      },
+      "S": {
+        "id": "S",
+        "typeTags": [
+          "stamina",
+          "lowCenter"
+        ],
+        "modifiers": {
+          "attack": -0.2,
+          "defense": 0.6,
+          "stamina": 1,
+          "stability": 0.8
+        },
+        "notes": "低重心輔助，常用於耐久/防守 CX。",
+        "evidenceLevel": "cxCommunityCommon",
+        "confidence": 0.45
+      },
+      "B": {
+        "id": "B",
+        "typeTags": [
+          "buffer",
+          "balance"
+        ],
+        "modifiers": {
+          "attack": 0.5,
+          "defense": 0.9,
+          "stamina": 0.2,
+          "stability": 0.8
+        },
+        "notes": "緩衝輔助，復活率/彈回能力被社群重視。",
+        "evidenceLevel": "cxCommunityCommon",
+        "confidence": 0.45
+      },
+      "E": {
+        "id": "E",
+        "typeTags": [
+          "contactCorrection",
+          "balance"
+        ],
+        "modifiers": {
+          "attack": 0.3,
+          "defense": 0.4,
+          "stamina": 0,
+          "stability": 0.2
+        },
+        "notes": "輔助外型/接觸補正；資料不足，需實測是否造成後段晃動。",
+        "evidenceLevel": "theoretical",
+        "confidence": 0.35
+      }
+    }
+  },
+  "verifiedCombos": [
+    {
+      "blade": "鳳凰飛翼",
+      "cx": {},
+      "ratchet": "9-60",
+      "bit": "R",
+      "role": "攻擊型",
+      "evidenceLevel": "multiSourceCommon",
+      "confidenceBonus": 20,
+      "notes": "高重量 + 9-60 爆裂耐受 + R 主動攻擊"
+    },
+    {
+      "blade": "暴龍霸擊",
+      "cx": {},
+      "ratchet": "1-60",
+      "bit": "LR",
+      "role": "攻擊型",
+      "evidenceLevel": "communityCommon",
+      "confidenceBonus": 20,
+      "notes": "1 凸集中衝撞 + LR 速攻；吃發射力"
+    },
+    {
+      "blade": "鮫鯊鋒鰭",
+      "cx": {},
+      "ratchet": "9-60",
+      "bit": "LF",
+      "role": "耐久攻擊",
+      "evidenceLevel": "communityCommon",
+      "confidenceBonus": 20,
+      "notes": "磨損後穩定 + LF 主動移動"
+    },
+    {
+      "blade": "巨鯨怒濤",
+      "cx": {},
+      "ratchet": "5-60",
+      "bit": "F",
+      "role": "均衡型",
+      "evidenceLevel": "communityCommon",
+      "confidenceBonus": 20,
+      "notes": "重量壓縮空間 + F 平底封鎖"
+    },
+    {
+      "blade": "蒼穹龍騎士",
+      "cx": {},
+      "ratchet": "5-60",
+      "bit": "E",
+      "role": "均衡型",
+      "evidenceLevel": "communityCommon",
+      "confidenceBonus": 20,
+      "notes": "5-60 + E 讓旋轉穩定維持"
+    },
+    {
+      "blade": "蒼龍爆刃",
+      "cx": {},
+      "ratchet": "1-60",
+      "bit": "LR",
+      "role": "攻擊型",
+      "evidenceLevel": "multiSourceCommon",
+      "confidenceBonus": 20,
+      "notes": "高爆發，抽速不足風險高"
+    },
+    {
+      "blade": "魔導神杖",
+      "cx": {},
+      "ratchet": "3-60",
+      "bit": "H",
+      "role": "均衡型",
+      "evidenceLevel": "multiSourceCommon",
+      "confidenceBonus": 20,
+      "notes": "穩定、兼顧耐久與攻防"
+    },
+    {
+      "blade": "鮫鯊狂鱗",
+      "cx": {},
+      "ratchet": "4-50",
+      "bit": "K",
+      "role": "攻擊型",
+      "evidenceLevel": "communityCommon",
+      "confidenceBonus": 20,
+      "notes": "低重心 + 踢擊軸攻擊效率"
+    },
+    {
+      "blade": "騎士圓甲",
+      "cx": {},
+      "ratchet": "9-60",
+      "bit": "R",
+      "role": "攻擊型",
+      "evidenceLevel": "communityCommon",
+      "confidenceBonus": 20,
+      "notes": "9-60 爆裂耐受 + R 速攻"
+    },
+    {
+      "blade": "霜輝銀狼",
+      "cx": {},
+      "ratchet": "5-60",
+      "bit": "FB",
+      "role": "攻擊/平衡",
+      "evidenceLevel": "communityCommon",
+      "confidenceBonus": 20,
+      "notes": "5-60 穩定重量 + FB 自由路線"
+    },
+    {
+      "blade": "衝擊龍神",
+      "cx": {},
+      "ratchet": "1-60",
+      "bit": "T",
+      "role": "攻擊型",
+      "evidenceLevel": "communityCommon",
+      "confidenceBonus": 20,
+      "notes": "重量單次衝撞 + T 穩定等一擊"
+    },
+    {
+      "blade": "天蠍長矛",
+      "cx": {},
+      "ratchet": "7-60",
+      "bit": "T",
+      "role": "均衡型",
+      "evidenceLevel": "communityCommon",
+      "confidenceBonus": 20,
+      "notes": "重型均衡，轉速不足是負擔"
+    },
+    {
+      "blade": "魔像奇岩",
+      "cx": {},
+      "ratchet": "9-60",
+      "bit": "LR",
+      "role": "防守反擊",
+      "evidenceLevel": "communityCommon",
+      "confidenceBonus": 20,
+      "notes": "防守型刃 + 速攻軸反擊"
+    },
+    {
+      "blade": "隕星龍騎士",
+      "cx": {},
+      "ratchet": "5-70",
+      "bit": "L",
+      "role": "均衡型",
+      "evidenceLevel": "communityCommon",
+      "confidenceBonus": 20,
+      "notes": "5-70 穩定重心 + L 耐久"
+    },
+    {
+      "blade": "武士星劍",
+      "cx": {},
+      "ratchet": "9-60",
+      "bit": "LR",
+      "role": "攻擊型",
+      "evidenceLevel": "communityCommon",
+      "confidenceBonus": 20,
+      "notes": "9 凸連打 + LR 速攻"
+    },
+    {
+      "blade": "爆擊",
+      "cx": {
+        "assistBlade": "J"
+      },
+      "ratchet": "3-60",
+      "bit": "H",
+      "role": "攻擊型",
+      "evidenceLevel": "cxCommunityCommon",
+      "confidenceBonus": 20,
+      "notes": "J 輔助 + 3-60 + H 是 CX 攻擊常見方向"
+    },
+    {
+      "blade": "爆擊",
+      "cx": {
+        "assistBlade": "H"
+      },
+      "ratchet": "4-50",
+      "bit": "LR",
+      "role": "攻擊型",
+      "evidenceLevel": "cxCommunityCommon",
+      "confidenceBonus": 20,
+      "notes": "重型變體，低固鎖 + LR 靈活攻擊"
+    },
+    {
+      "blade": "威能",
+      "cx": {
+        "assistBlade": "W"
+      },
+      "ratchet": "7-60",
+      "bit": "H",
+      "role": "防守型",
+      "evidenceLevel": "cxCommunityCommon",
+      "confidenceBonus": 20,
+      "notes": "W 車輪輔助偏耐久防守"
+    },
+    {
+      "blade": "威能",
+      "cx": {
+        "assistBlade": "H"
+      },
+      "ratchet": "7-60",
+      "bit": "LR",
+      "role": "均衡型",
+      "evidenceLevel": "cxCommunityCommon",
+      "confidenceBonus": 20,
+      "notes": "重型戰車，極吃抽速"
+    },
+    {
+      "blade": "九尾",
+      "cx": {
+        "assistBlade": "J"
+      },
+      "ratchet": "1-60",
+      "bit": "LR",
+      "role": "攻擊型",
+      "evidenceLevel": "cxCommunityCommon",
+      "confidenceBonus": 20,
+      "notes": "CX-06 標準攻擊配置"
+    },
+    {
+      "blade": "獵魂",
+      "cx": {
+        "assistBlade": "S"
+      },
+      "ratchet": "9-60",
+      "bit": "E",
+      "role": "耐久型",
+      "evidenceLevel": "cxCommunityCommon",
+      "confidenceBonus": 20,
+      "notes": "S 低重心 + 9-60 + E 耐久"
+    },
+    {
+      "blade": "勇氣",
+      "cx": {
+        "assistBlade": "B"
+      },
+      "ratchet": "1-60",
+      "bit": "LR",
+      "role": "均衡型",
+      "evidenceLevel": "cxCommunityCommon",
+      "confidenceBonus": 20,
+      "notes": "B 緩衝輔助復活率高，攻守兼備"
+    },
+    {
+      "blade": "幽冥",
+      "cx": {
+        "assistBlade": "S"
+      },
+      "ratchet": "7-60",
+      "bit": "T",
+      "role": "耐久型",
+      "evidenceLevel": "cxCommunityCommon",
+      "confidenceBonus": 20,
+      "notes": "S + 7-60 + T 純防守耐久"
+    }
+  ]
+}
