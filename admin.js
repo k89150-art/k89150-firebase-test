@@ -119,28 +119,47 @@ function getUidFromDoc(snapshot) {
   return snapshot.ref.parent.parent ? snapshot.ref.parent.parent.id : "未知 UID";
 }
 
+function renderEmptyRow(message) {
+  const tbody = document.getElementById("adminTableBody");
+  if (!tbody) return;
+
+  tbody.innerHTML = "";
+  const row = tbody.insertRow();
+  const cell = row.insertCell(0);
+  cell.colSpan = 4;
+  cell.textContent = message;
+}
+
 function renderTable() {
   const tbody = document.getElementById("adminTableBody");
   if (!tbody) return;
 
   if (!isAdmin()) {
-    tbody.innerHTML = `<tr><td colspan="4">請先以管理員帳號登入。</td></tr>`;
+    renderEmptyRow("請先以管理員帳號登入。");
     return;
   }
 
   if (!adminRows.length) {
-    tbody.innerHTML = `<tr><td colspan="4">目前沒有讀取到使用者資料。</td></tr>`;
+    renderEmptyRow("目前沒有讀取到使用者資料。");
     return;
   }
 
-  tbody.innerHTML = adminRows.map(row => `
-    <tr>
-      <td>${escapeHtml(row.email || "-")}</td>
-      <td>${escapeHtml(row.uid)}</td>
-      <td>${escapeHtml(row.updatedAtText)}</td>
-      <td><button type="button" onclick="openUserPage('${escapeHtml(row.uid)}')">進入頁面</button></td>
-    </tr>
-  `).join("");
+  tbody.innerHTML = "";
+
+  adminRows.forEach(rowData => {
+    const row = tbody.insertRow();
+
+    row.insertCell(0).textContent = rowData.email || "-";
+    row.insertCell(1).textContent = rowData.uid;
+    row.insertCell(2).textContent = rowData.updatedAtText;
+
+    const actionCell = row.insertCell(3);
+    const button = document.createElement("button");
+    button.type = "button";
+    button.textContent = "進入頁面";
+    button.addEventListener("click", () => openUserPage(rowData.uid));
+    actionCell.appendChild(button);
+  });
 }
 
 function renderSummary() {
@@ -189,8 +208,9 @@ window.loadAdminData = async function () {
       .filter(snapshot => snapshot.id === "main")
       .map(snapshot => {
         const data = snapshot.data() || {};
+        const pathUid = getUidFromDoc(snapshot);
         return {
-          uid: data.ownerUid || getUidFromDoc(snapshot),
+          uid: pathUid,
           email: data.ownerEmail || "-",
           configCount: countArray(data, "configTable"),
           historyCount: countArray(data, "historyTable"),
