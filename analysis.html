@@ -30,8 +30,17 @@
     .status-warn { color:#ffd43b; }
     .status-bad { color:#ff8787; }
     .section-title { margin-top:18px; margin-bottom:6px; font-size:16px; border-left:4px solid #3d7eff; padding-left:8px; color:#fff; }
+
+    .score-card-grid { display:grid; grid-template-columns: repeat(2, 1fr); gap:10px; margin-top:12px; }
+    .score-card { background:#151515; border:1px solid #303030; border-radius:8px; padding:12px; }
+    .score-card-top { display:flex; justify-content:space-between; gap:8px; align-items:center; margin-bottom:8px; }
+    .score-card-name { color:#fff; font-weight:800; }
+    .score-card-value { color:#dbe7ff; font-weight:800; }
+    .score-bar { height:8px; border-radius:999px; background:#292929; overflow:hidden; }
+    .score-bar-fill { height:100%; border-radius:999px; background:#3d7eff; }
+    .result-card { background:#151515; border:1px solid #303030; border-radius:8px; padding:12px; margin-top:10px; }
     @media (max-width:700px){
-      .analysis-form-grid, .result-summary { grid-template-columns:1fr; }
+      .analysis-form-grid, .result-summary, .score-card-grid { grid-template-columns:1fr; }
       .analysis-actions button, .mode-tab { width:100%; }
     }
   </style>
@@ -135,7 +144,7 @@
   <datalist id="cxOverOptions"></datalist>
   <datalist id="cxAssistOptions"></datalist>
 
-  <script src="site-menu.js?v=20260630-analysis2"></script>
-  <script type="module" src="analysis.js?v=20260630-analysis2"></script>
+  <script src="site-menu.js?v=20260630-engine1"></script>
+  <script type="module" src="analysis.js?v=20260630-engine1"></script>
 </body>
 </html>
