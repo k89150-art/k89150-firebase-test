@@ -22,7 +22,7 @@ service cloud.firestore {
     }
 
     match /{path=**}/appData/{documentId} {
-      allow read: if documentId == "main" && isAdmin();
+      allow read: if isAdmin();
     }
   }
 }
