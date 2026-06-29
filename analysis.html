@@ -1,9 +1,9 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>配置分析｜戰鬥陀螺管理表</title>
+  <title>?蔭??嚚擛仿??箇恣?”</title>
   <link rel="stylesheet" href="style.css?v=20260629-mobile-actions1" />
   <link rel="stylesheet" href="site-menu.css" />
   <style>
@@ -47,88 +47,88 @@
 </head>
 <body>
   <div class="container analysis-page">
-    <h2>配置分析</h2>
+    <h2>?蔭??</h2>
 
     <div class="analysis-panel">
-      <div>輸入一組想測的配置，系統會依資料庫的角色、Tier、信心與 CX 結構規則產生分析報告。</div>
-      <div class="analysis-note">此功能是非官方理論分析，不會保存、不會修改配置紀錄，也不會扣除庫存。</div>
+      <div>頛詨銝蝯皜祉??蔭嚗頂蝯望?靘??澈???脯ier?縑敹? CX 蝯?閬??Ｙ????勗???/div>
+      <div class="analysis-note">甇文??賣???寧?隢???銝?靽????耨?寥?蝵桃???銋???文澈摮?/div>
     </div>
 
     <div class="analysis-panel">
-      <div class="mode-tabs" role="tablist" aria-label="配置模式">
-        <button type="button" class="mode-tab active" data-mode="standard">BX / UX 配置</button>
-        <button type="button" class="mode-tab" data-mode="cx-main">CX 三件式</button>
-        <button type="button" class="mode-tab" data-mode="cx-split">CX 分體式</button>
+      <div class="mode-tabs" role="tablist" aria-label="?蔭璅∪?">
+        <button type="button" class="mode-tab active" data-mode="standard">BX / UX ?蔭</button>
+        <button type="button" class="mode-tab" data-mode="cx-main">CX 銝辣撘?/button>
+        <button type="button" class="mode-tab" data-mode="cx-split">CX ??撘?/button>
       </div>
 
       <div id="standardFields" class="analysis-form-grid">
         <div class="analysis-field">
-          <label for="bladeInput">上蓋</label>
-          <input id="bladeInput" list="bladeOptions" type="text" placeholder="例如 魔導神杖">
+          <label for="bladeInput">銝?</label>
+          <input id="bladeInput" list="bladeOptions" type="text" placeholder="靘? 擳?蟡?">
         </div>
         <div class="analysis-field">
-          <label for="standardRatchetInput">固鎖</label>
-          <input id="standardRatchetInput" list="ratchetOptions" type="text" placeholder="例如 9-60">
+          <label for="standardRatchetInput">?粹?</label>
+          <input id="standardRatchetInput" list="ratchetOptions" type="text" placeholder="靘? 9-60">
         </div>
         <div class="analysis-field">
-          <label for="standardBitInput">軸心</label>
-          <input id="standardBitInput" list="bitOptions" type="text" placeholder="例如 B">
+          <label for="standardBitInput">頠詨?</label>
+          <input id="standardBitInput" list="bitOptions" type="text" placeholder="靘? B">
         </div>
       </div>
 
       <div id="cxMainFields" class="analysis-form-grid" style="display:none;">
         <div class="analysis-field">
-          <label for="cxMainLockInput">紋章鎖</label>
-          <input id="cxMainLockInput" list="cxLockOptions" type="text" placeholder="例如 蒼龍">
+          <label for="cxMainLockInput">蝝???/label>
+          <input id="cxMainLockInput" list="cxLockOptions" type="text" placeholder="靘? ?潮?">
         </div>
         <div class="analysis-field">
-          <label for="cxMainBladeInput">主要戰刃</label>
-          <input id="cxMainBladeInput" list="cxMainBladeOptions" type="text" placeholder="例如 勇氣">
+          <label for="cxMainBladeInput">銝餉??啣?</label>
+          <input id="cxMainBladeInput" list="cxMainBladeOptions" type="text" placeholder="靘? ?除">
         </div>
         <div class="analysis-field">
-          <label for="cxMainAssistInput">輔助戰刃</label>
-          <input id="cxMainAssistInput" list="cxAssistOptions" type="text" placeholder="例如 H">
+          <label for="cxMainAssistInput">頛?啣?</label>
+          <input id="cxMainAssistInput" list="cxAssistOptions" type="text" placeholder="靘? H">
         </div>
         <div class="analysis-field">
-          <label for="cxMainRatchetInput">固鎖</label>
-          <input id="cxMainRatchetInput" list="ratchetOptions" type="text" placeholder="例如 3-60">
+          <label for="cxMainRatchetInput">?粹?</label>
+          <input id="cxMainRatchetInput" list="ratchetOptions" type="text" placeholder="靘? 3-60">
         </div>
         <div class="analysis-field">
-          <label for="cxMainBitInput">軸心</label>
-          <input id="cxMainBitInput" list="bitOptions" type="text" placeholder="例如 R">
+          <label for="cxMainBitInput">頠詨?</label>
+          <input id="cxMainBitInput" list="bitOptions" type="text" placeholder="靘? R">
         </div>
       </div>
 
       <div id="cxSplitFields" class="analysis-form-grid" style="display:none;">
         <div class="analysis-field">
-          <label for="cxSplitLockInput">紋章鎖</label>
-          <input id="cxSplitLockInput" list="cxLockOptions" type="text" placeholder="例如 龍王">
+          <label for="cxSplitLockInput">蝝???/label>
+          <input id="cxSplitLockInput" list="cxLockOptions" type="text" placeholder="靘? 樴?">
         </div>
         <div class="analysis-field">
-          <label for="cxMetalInput">金屬戰刃</label>
-          <input id="cxMetalInput" list="cxMetalOptions" type="text" placeholder="例如 閃擊">
+          <label for="cxMetalInput">?惇?啣?</label>
+          <input id="cxMetalInput" list="cxMetalOptions" type="text" placeholder="靘? ??">
         </div>
         <div class="analysis-field">
-          <label for="cxOverInput">超越戰刃</label>
-          <input id="cxOverInput" list="cxOverOptions" type="text" placeholder="例如 B">
+          <label for="cxOverInput">頞??啣?</label>
+          <input id="cxOverInput" list="cxOverOptions" type="text" placeholder="靘? B">
         </div>
         <div class="analysis-field">
-          <label for="cxSplitAssistInput">輔助戰刃</label>
-          <input id="cxSplitAssistInput" list="cxAssistOptions" type="text" placeholder="例如 K">
+          <label for="cxSplitAssistInput">頛?啣?</label>
+          <input id="cxSplitAssistInput" list="cxAssistOptions" type="text" placeholder="靘? K">
         </div>
         <div class="analysis-field">
-          <label for="cxSplitRatchetInput">固鎖</label>
-          <input id="cxSplitRatchetInput" list="ratchetOptions" type="text" placeholder="例如 1-50">
+          <label for="cxSplitRatchetInput">?粹?</label>
+          <input id="cxSplitRatchetInput" list="ratchetOptions" type="text" placeholder="靘? 1-50">
         </div>
         <div class="analysis-field">
-          <label for="cxSplitBitInput">軸心</label>
-          <input id="cxSplitBitInput" list="bitOptions" type="text" placeholder="例如 I">
+          <label for="cxSplitBitInput">頠詨?</label>
+          <input id="cxSplitBitInput" list="bitOptions" type="text" placeholder="靘? I">
         </div>
       </div>
 
       <div class="analysis-actions">
-        <button id="analyzeBtn" type="button" class="primary-btn">分析配置</button>
-        <button id="clearBtn" type="button" class="secondary-btn">清除</button>
+        <button id="analyzeBtn" type="button" class="primary-btn">???蔭</button>
+        <button id="clearBtn" type="button" class="secondary-btn">皜</button>
       </div>
     </div>
 
@@ -144,7 +144,8 @@
   <datalist id="cxOverOptions"></datalist>
   <datalist id="cxAssistOptions"></datalist>
 
-  <script src="site-menu.js?v=20260630-engine1"></script>
-  <script type="module" src="analysis.js?v=20260630-engine1"></script>
+  <script src="site-menu.js?v=20260630-engine2"></script>
+  <script type="module" src="analysis.js?v=20260630-engine2"></script>
 </body>
 </html>
+
