@@ -363,6 +363,97 @@ function renderList(items, className = "") {
     ? items.map(item => `<li class="${className}">${escapeHtml(item)}</li>`).join("")
     : `<li class="${className}">目前沒有明顯項目。</li>`;
 }
+function partTags(part) {
+  return Array.isArray(part?.roleTags) ? part.roleTags : [];
+}
+
+function comboTags(config) {
+  return Object.values(config.parts).flatMap(partTags);
+}
+
+function hasTag(config, tags) {
+  const wanted = Array.isArray(tags) ? tags : [tags];
+  return comboTags(config).some(tag => wanted.includes(tag));
+}
+
+function ratchetHeight(part) {
+  const source = String(part?.height || part?.code || part?.id || "");
+  const match = source.match(/-(\d+)/);
+  return match ? Number(match[1]) : Number(part?.height || 0);
+}
+
+function ratchetGear(part) {
+  const source = String(part?.gearCount || part?.code || part?.id || "");
+  const match = source.match(/^(\d+)/);
+  return match ? Number(match[1]) : Number(part?.gearCount || 0);
+}
+
+function uniqueItems(items) {
+  return [...new Set(items.filter(Boolean))];
+}
+
+function buildDynamicWarnings(config, analysis, baseWarnings) {
+  const warnings = [...baseWarnings];
+  const scores = analysis.scores || {};
+  const { blade, ratchet, bit } = config.parts;
+  const height = ratchetHeight(ratchet);
+  const gear = ratchetGear(ratchet);
+  const bitTags = partTags(bit);
+
+  if ((scores.control ?? 0) <= -1) warnings.push("操控分偏低，實戰時要注意自爆、衝出中心或第一波打空後失速。");
+  if ((scores.burstSafety ?? 0) <= -1) warnings.push("爆裂安全分偏低，遇到高攻擊配置時需要特別留意被打固鎖或爆裂風險。");
+  if ((scores.stamina ?? 0) <= -1 && hasTag(config, ["攻擊", "奇襲"])) warnings.push("持久分偏低，這組比較依賴前中期得分，拖到後段可能不利。");
+  if ((scores.attack ?? 0) <= 0 && hasTag(config, "持久")) warnings.push("主動攻擊分不高，對上純防守或高持久配置時可能需要靠穩定收尾取勝。");
+  if (height >= 70) warnings.push(`${codeOf(ratchet)} 屬於較高固鎖，可能提高重心與被攻擊打到固鎖的機率。`);
+  if (height >= 80) warnings.push("80 以上高度風險更高，除非是明確高位策略，否則建議保守測試。");
+  if (gear === 1 && !bitTags.includes("攻擊")) warnings.push("1 系固鎖偏攻擊取向，若軸心不是攻擊型，配置方向可能不夠集中。");
+  if (hasTag({ parts: { blade } }, "持久") && bitTags.includes("攻擊")) warnings.push("持久型上蓋搭攻擊軸會犧牲尾段續航，適合實驗但不一定穩定。");
+  if (hasTag({ parts: { blade } }, "攻擊") && bitTags.includes("持久")) warnings.push("攻擊型上蓋搭持久軸會降低主動得分能力，可能變成不上不下的配置。");
+  if ((scores.metaConfidence ?? 0) <= 0) warnings.push("資料信心偏低，這組建議先用少量實戰測試再決定是否放進主力牌組。");
+
+  return uniqueItems(warnings);
+}
+
+function buildDynamicRecommendations(config, analysis) {
+  const recommendations = [...(analysis.recommendations || [])];
+  const scores = analysis.scores || {};
+  const { ratchet, bit } = config.parts;
+  const height = ratchetHeight(ratchet);
+
+  if ((scores.attack ?? 0) >= Math.max(scores.stamina ?? 0, scores.defense ?? 0)) {
+    recommendations.push("若想強化攻擊，優先測 1-60、3-60、5-60 搭 R / LR / F 類軸心，並觀察自爆率。");
+  }
+  if ((scores.stamina ?? 0) >= Math.max(scores.attack ?? 0, scores.defense ?? 0)) {
+    recommendations.push("若想強化持久，優先測 9-60、3-60、5-60 搭 B / H / O / FB 類軸心。");
+  }
+  if ((scores.defense ?? 0) >= Math.max(scores.attack ?? 0, scores.stamina ?? 0)) {
+    recommendations.push("若想強化防禦，優先測 9 系或 7 系固鎖，軸心可往 H / UN / B 類型調整。");
+  }
+  if ((scores.control ?? 0) < 0) recommendations.push("若操作不穩，先把軸心換成較可控的 R / P / T / H 類型，或降低固鎖高度。");
+  if ((scores.burstSafety ?? 0) < 0) recommendations.push("若容易爆裂或被打固鎖，優先改 9-60、3-60 或其他 60 高度固鎖測試。");
+  if (height >= 70) recommendations.push("目前固鎖偏高，可另外測 60 高度版本，比較重心、抗打與尾段穩定性。");
+  if (hasIntegratedBit(bit)) recommendations.push("Op / Tr 屬於一體式軸心，建議把比較重點放在上蓋或 CX 戰刃相性，不需要測固鎖替換。");
+  if (!recommendations.length) recommendations.push("目前分數沒有明顯短板，建議直接實戰記錄對攻擊、防禦、持久三類對手的勝負感受。");
+
+  return uniqueItems(recommendations);
+}
+
+function buildDynamicDeckRole(config, analysis) {
+  const scores = analysis.scores || {};
+  const attack = scores.attack ?? 0;
+  const stamina = scores.stamina ?? 0;
+  const defense = scores.defense ?? 0;
+  const control = scores.control ?? 0;
+  const confidence = scores.metaConfidence ?? 0;
+
+  if (confidence <= 0) return "測試位 / 資料信心不足，先不要放主力位。";
+  if (attack >= stamina + 1 && attack >= defense + 1) {
+    return control >= 0 ? "3G 前段攻擊位 / 5G 奇襲或主動得分位" : "5G 奇襲位 / 高風險攻擊測試位";
+  }
+  if (stamina >= attack && stamina >= defense) return "3G 後段持久位 / 5G 穩定收尾位";
+  if (defense >= attack && defense >= stamina) return "3G 中後段防守位 / 5G 抗攻擊與消耗位";
+  return "平衡位 / 依隊伍缺口調整，可放 3G 中段或 5G 補位。";
+}
 
 function renderAnalysis() {
   const result = document.getElementById("analysisResult");
@@ -388,7 +479,7 @@ function renderAnalysis() {
   }
 
   const analysis = analyzeCombo(toEngineInput(config), database, rules);
-  const warnings = [...validation.warnings, ...(analysis.warnings || [])];
+  const warnings = buildDynamicWarnings(config, analysis, [...validation.warnings, ...(analysis.warnings || [])]);`n  const recommendations = buildDynamicRecommendations(config, analysis);`n  const deckRole = buildDynamicDeckRole(config, analysis);
 
   result.style.display = "block";
   result.innerHTML = `
@@ -397,7 +488,7 @@ function renderAnalysis() {
       <span class="analysis-pill">${escapeHtml(config.label)}</span>
       <span class="analysis-pill">${escapeHtml(analysis.primaryRole || "定位未明")}</span>
       <span class="analysis-pill">信心：${escapeHtml(analysis.confidence || "未判定")}</span>
-      <span class="analysis-pill">${escapeHtml(analysis.deckRole || "牌組位置未判定")}</span>
+      <span class="analysis-pill">${escapeHtml(deckRole)}</span>
     </div>
     <div class="result-card">
       <div class="section-title">一句話定位</div>
@@ -412,9 +503,9 @@ function renderAnalysis() {
     <div class="section-title">風險提醒</div>
     <ul class="status-list">${renderList(warnings, "status-warn")}</ul>
     <div class="section-title">改裝建議</div>
-    <ul class="status-list">${renderList(analysis.recommendations || [])}</ul>
+    <ul class="status-list">${renderList(recommendations)}</ul>
     <div class="section-title">3G / 5G 建議位置</div>
-    <div class="result-card">${escapeHtml(analysis.deckRole || "建議先作為測試位，累積實戰後再調整。")}</div>
+    <div class="result-card">${escapeHtml(deckRole)}</div>
     <div class="analysis-note">分析使用 analyzeCombo() 與 v1.0-alpha 規則。這是理論輔助，不等於實戰勝率保證。</div>
   `;
 }
