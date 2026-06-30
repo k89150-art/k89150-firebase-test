@@ -8,6 +8,10 @@ let currentMode = "standard";
 const INTEGRATED_BITS = new Set(["OP", "TR"]);
 const NO_RATCHET_MODELS = new Set(["UX-19"]);
 const UX16_MODELS = new Set(["UX-16"]);
+const BURST_BITS = new Set(["I", "IMPACT", "GF", "A", "V"]);
+const CONTROL_ATTACK_BITS = new Set(["R", "LR"]);
+const STAMINA_BITS = new Set(["B", "O", "DB", "LO"]);
+const DEFENSE_BITS = new Set(["H", "WB", "BS"]);
 
 const SCORE_LABELS = {
   attack: "攻擊",
@@ -61,6 +65,12 @@ async function loadData() {
   fillOptions();
 }
 
+function optionLabel(item) {
+  const prefix = item.model ? `${item.model} ` : item.code && item.code !== item.id ? `${item.code} ` : "";
+  const name = item.name || item.id || item.code || "";
+  return `${prefix}${name}`.trim();
+}
+
 function addIndex(index, item, keys) {
   keys.forEach(key => {
     const normalized = normalizeText(key);
@@ -70,7 +80,16 @@ function addIndex(index, item, keys) {
 
 function buildPartIndex(items = []) {
   const index = new Map();
-  items.forEach(item => addIndex(index, item, [item.id, item.code, item.name, item.model].filter(Boolean)));
+  items.forEach(item => {
+    addIndex(index, item, [
+      item.id,
+      item.code,
+      item.name,
+      item.model,
+      optionLabel(item),
+      item.model && item.name ? `${item.model}${item.name}` : ""
+    ].filter(Boolean));
+  });
   return index;
 }
 
@@ -85,12 +104,6 @@ function buildIndexes(db) {
     cxOvers: buildPartIndex(db.cx?.overBlades),
     cxAssists: buildPartIndex(db.cx?.assistBlades)
   };
-}
-
-function optionLabel(item) {
-  const prefix = item.model ? `${item.model} ` : item.code && item.code !== item.id ? `${item.code} ` : "";
-  const name = item.name || item.id || item.code || "";
-  return `${prefix}${name}`.trim();
 }
 
 function fillDatalist(id, items = []) {
@@ -116,7 +129,18 @@ function fillOptions() {
 function findPart(indexName, input) {
   const value = String(input || "").trim();
   if (!value || value === "-" || value === "無固鎖") return null;
-  return indexes[indexName].get(normalizeText(value)) || null;
+
+  const exact = indexes[indexName].get(normalizeText(value));
+  if (exact) return exact;
+
+  const compact = normalizeText(value);
+  for (const item of indexes[indexName].values()) {
+    const combined = normalizeText(optionLabel(item));
+    if (combined && compact.includes(combined)) return item;
+    if (item.model && item.name && compact.includes(normalizeText(item.model)) && compact.includes(normalizeText(item.name))) return item;
+  }
+
+  return null;
 }
 
 function getInput(id) {
@@ -139,6 +163,26 @@ function isNoRatchetValue(value) {
 
 function codeOf(part) {
   return part?.code || part?.id || "";
+}
+
+function nameOf(part) {
+  return part?.name || part?.id || part?.code || "";
+}
+
+function partTitle(part) {
+  if (!part) return "";
+  const code = part.code && part.code !== part.id ? ` / ${part.code}` : "";
+  const model = part.model ? `${part.model} ` : "";
+  return `${model}${part.name || part.id}${code}`;
+}
+
+function tagsOf(part) {
+  return Array.isArray(part?.roleTags) ? part.roleTags : [];
+}
+
+function hasAnyTag(part, tags) {
+  const wanted = Array.isArray(tags) ? tags : [tags];
+  return tagsOf(part).some(tag => wanted.includes(tag));
 }
 
 function modelCodeOf(part) {
@@ -166,6 +210,55 @@ function isSimpleRatchet(ratchet) {
   return Boolean(match && match[1].endsWith("5"));
 }
 
+function ratchetHeight(ratchet) {
+  const source = String(ratchet?.height || ratchet?.code || ratchet?.id || "");
+  const match = source.match(/-(\d+)/);
+  return match ? Number(match[1]) : Number(ratchet?.height || 0);
+}
+
+function ratchetGear(ratchet) {
+  const source = String(ratchet?.gearCount || ratchet?.code || ratchet?.id || "");
+  const match = source.match(/^(\d+)/);
+  return match ? Number(match[1]) : Number(ratchet?.gearCount || 0);
+}
+
+function bitCode(bit) {
+  return normalizeCode(bit?.code || bit?.id || bit?.name);
+}
+
+function isAttackBlade(blade) {
+  return hasAnyTag(blade, ["攻擊", "奇襲"]);
+}
+
+function isHeavyAttackBlade(blade) {
+  const text = `${nameOf(blade)} ${partTitle(blade)} ${tagsOf(blade).join(" ")}`;
+  return isAttackBlade(blade) && (/暴龍|爆擊|龍|衝擊|重攻擊|一擊|霸擊/.test(text) || hasAnyTag(blade, ["特化", "奇襲"]));
+}
+
+function isStaminaBlade(blade) {
+  return hasAnyTag(blade, "持久");
+}
+
+function isDefenseBlade(blade) {
+  return hasAnyTag(blade, ["防禦", "anti-attack", "反打"]);
+}
+
+function isLeftSpinBlade(blade) {
+  return hasAnyTag(blade, "左迴旋") || /左/.test(String(blade?.role || ""));
+}
+
+function isAttackBit(bit) {
+  return hasAnyTag(bit, ["攻擊", "奇襲"]);
+}
+
+function isStaminaBit(bit) {
+  return hasAnyTag(bit, "持久") || STAMINA_BITS.has(bitCode(bit));
+}
+
+function isDefenseBit(bit) {
+  return hasAnyTag(bit, ["防禦", "anti-attack"]) || DEFENSE_BITS.has(bitCode(bit));
+}
+
 function fieldLabel(key) {
   return {
     blade: "上蓋",
@@ -177,10 +270,6 @@ function fieldLabel(key) {
     ratchet: "固鎖",
     bit: "軸心"
   }[key] || key;
-}
-
-function nameOf(part) {
-  return part?.name || part?.id || part?.code || "";
 }
 
 function collectStandard() {
@@ -278,7 +367,7 @@ function validateConfig(config) {
   if (isUx16Blade(parts.blade) && parts.ratchet && !isSimpleRatchet(parts.ratchet)) fatal.push("時鐘幻象只能使用簡易固鎖。");
 
   if (config.cxType === "main") {
-    warnings.push("CX 主要戰刃模式會以：紋章鎖 + 主要戰刃 + 輔助戰刃分析。暫不自動推回完整上蓋名稱。");
+    warnings.push("CX 主要戰刃模式會以紋章鎖、主要戰刃、輔助戰刃共同判斷上蓋方向。");
     const recommended = parts.main?.recommendedAssistBlades || [];
     if (recommended.length && parts.assist && !recommended.includes(codeOf(parts.assist))) {
       warnings.push(`${nameOf(parts.assist)} 不是 ${nameOf(parts.main)} 資料中優先建議的輔助戰刃，可測試但信心會較保守。`);
@@ -286,7 +375,7 @@ function validateConfig(config) {
   }
 
   if (config.cxType === "split") {
-    warnings.push("CX 金屬 + 超越模式會以：紋章鎖 + 金屬戰刃 + 超越戰刃 + 輔助戰刃分析。");
+    warnings.push("CX 金屬 + 超越模式會以紋章鎖、金屬戰刃、超越戰刃、輔助戰刃共同判斷上蓋方向。");
   }
 
   return { fatal, warnings };
@@ -324,11 +413,201 @@ function toEngineInput(config) {
   };
 }
 
-function partTitle(part) {
-  if (!part) return "";
-  const code = part.code && part.code !== part.id ? ` / ${part.code}` : "";
-  const model = part.model ? `${part.model} ` : "";
-  return `${model}${part.name || part.id}${code}`;
+function makeEmptyProfile() {
+  return { attack: 0, stamina: 0, defense: 0, balance: 0, control: 0, risk: 0 };
+}
+
+function addWeighted(target, profile, weight) {
+  Object.keys(target).forEach(key => {
+    target[key] += (profile[key] || 0) * weight;
+  });
+}
+
+function partProfile(part) {
+  const profile = makeEmptyProfile();
+  const tags = tagsOf(part);
+
+  if (tags.includes("攻擊")) profile.attack += 2;
+  if (tags.includes("奇襲")) { profile.attack += 1.5; profile.risk += 1; }
+  if (tags.includes("持久")) profile.stamina += 2;
+  if (tags.includes("防禦")) profile.defense += 2;
+  if (tags.includes("anti-attack")) { profile.defense += 1.5; profile.balance += 0.5; }
+  if (tags.includes("反打")) { profile.defense += 0.8; profile.attack += 0.6; }
+  if (tags.includes("平衡")) profile.balance += 2;
+  if (tags.includes("低身位")) profile.control += 0.5;
+  if (tags.includes("高身位")) profile.risk += 0.8;
+  if (tags.includes("特化")) profile.risk += 0.7;
+
+  const code = bitCode(part);
+  if (BURST_BITS.has(code)) { profile.attack += 1.5; profile.control -= 0.8; profile.risk += 1; }
+  if (CONTROL_ATTACK_BITS.has(code)) { profile.attack += 1; profile.control += 0.5; }
+  if (STAMINA_BITS.has(code)) profile.stamina += 1.2;
+  if (DEFENSE_BITS.has(code)) { profile.defense += 1.2; profile.control += 0.4; }
+
+  return profile;
+}
+
+function weightedProfile(config) {
+  const profile = makeEmptyProfile();
+  const { parts } = config;
+  const bladeParts = config.cxType
+    ? [parts.main, parts.metal, parts.over, parts.assist].filter(Boolean)
+    : [parts.blade].filter(Boolean);
+  const bladeWeight = bladeParts.length ? 0.45 / bladeParts.length : 0;
+
+  bladeParts.forEach(part => addWeighted(profile, partProfile(part), bladeWeight));
+  addWeighted(profile, partProfile(parts.bit), 0.35);
+  addWeighted(profile, ratchetProfile(parts.ratchet), 0.20);
+  return profile;
+}
+
+function ratchetProfile(ratchet) {
+  const profile = makeEmptyProfile();
+  const height = ratchetHeight(ratchet);
+  const gear = ratchetGear(ratchet);
+
+  if (height === 60) { profile.control += 1; profile.balance += 0.5; }
+  if (height > 60) { profile.defense += 0.3; profile.risk += 0.7; }
+  if (height <= 55 && height > 0) { profile.attack += 0.6; profile.control += 0.3; }
+  if (gear === 1) { profile.attack += 0.8; profile.risk += 0.4; }
+  if ([5, 7, 9].includes(gear)) { profile.defense += 0.5; profile.control += 0.4; }
+  if (gear === 9) profile.stamina += 0.4;
+
+  return profile;
+}
+
+function primaryBladePart(config) {
+  return config.parts.blade || config.parts.main || config.parts.metal || config.parts.over || config.parts.assist;
+}
+
+function classifyBuild(config, analysis) {
+  const blade = primaryBladePart(config);
+  const bit = config.parts.bit;
+  const ratchet = config.parts.ratchet;
+  const profile = weightedProfile(config);
+  const code = bitCode(bit);
+
+  if (isHeavyAttackBlade(blade) && BURST_BITS.has(code)) return "低身位重攻擊 / 一擊爆發型";
+  if (isHeavyAttackBlade(blade) && CONTROL_ATTACK_BITS.has(code)) return "可控重攻擊型";
+  if (isAttackBlade(blade) && isAttackBit(bit)) return "攻擊壓制型";
+  if (isAttackBlade(blade) && isStaminaBit(bit)) return "混合測試型 / 攻擊路線衝突";
+  if (isStaminaBlade(blade) && isAttackBit(bit)) return "反打 / 特化攻擊型";
+  if (isStaminaBlade(blade) && STAMINA_BITS.has(code)) return "持久穩定型";
+  if (isLeftSpinBlade(blade) && code === "E") return "反旋末段 / 持久型";
+  if (isDefenseBlade(blade) && DEFENSE_BITS.has(code)) return "anti-attack / 防守反打型";
+
+  const sorted = [
+    ["攻擊型", profile.attack],
+    ["持久型", profile.stamina],
+    ["防禦型", profile.defense],
+    ["平衡型", profile.balance]
+  ].sort((a, b) => b[1] - a[1]);
+
+  if (sorted[0][1] - sorted[1][1] < 0.35) return "平衡測試型";
+  if (ratchetHeight(ratchet) <= 55 && sorted[0][0] === "攻擊型") return "低身位攻擊型";
+  return sorted[0][0] || analysis.primaryRole || "測試型";
+}
+
+function buildSummary(config, analysis, role) {
+  const blade = primaryBladePart(config);
+  const bit = config.parts.bit;
+  const ratchet = config.parts.ratchet;
+  const parts = [partTitle(blade), partTitle(ratchet), partTitle(bit)].filter(Boolean).join(" / ");
+  return `${role}。${parts} 的組合方向以${role.replace(/\s*\/.*$/, "")}為主，建議用實戰確認發射穩定性與對位表現。`;
+}
+
+function buildStrengths(config, analysis) {
+  const strengths = [];
+  const blade = primaryBladePart(config);
+  const bit = config.parts.bit;
+  const ratchet = config.parts.ratchet;
+  const bName = partTitle(blade) || "此上蓋";
+  const bitName = partTitle(bit) || "此軸心";
+  const rName = partTitle(ratchet) || "此固鎖";
+  const code = bitCode(bit);
+  const height = ratchetHeight(ratchet);
+  const gear = ratchetGear(ratchet);
+
+  if (isAttackBlade(blade) && isAttackBit(bit)) strengths.push(`${bName} 本身偏攻擊，搭配 ${bitName} 能提高主動接觸與得分壓力。`);
+  if (isHeavyAttackBlade(blade) && BURST_BITS.has(code)) strengths.push(`${bName} 偏重攻擊，搭配 ${bitName} 可以提高瞬間衝擊與一擊爆發。`);
+  if (isHeavyAttackBlade(blade) && CONTROL_ATTACK_BITS.has(code)) strengths.push(`${bitName} 能讓 ${bName} 的攻擊路線比較可控，不會只押一波爆發。`);
+  if (isStaminaBlade(blade) && STAMINA_BITS.has(code)) strengths.push(`${bName} 的持久定位搭配 ${bitName}，方向清楚，適合拖長局。`);
+  if (isLeftSpinBlade(blade) && code === "E") strengths.push(`${bName} 搭配 ${bitName} 可強化反旋末段與中後段維持。`);
+  if (isDefenseBlade(blade) && DEFENSE_BITS.has(code)) strengths.push(`${bName} 搭配 ${bitName} 可往 anti-attack 或防守反打方向發展。`);
+  if (height === 60) strengths.push(`${rName} 的 60 高度能讓 ${bName} 保持較穩定重心，並降低被打固鎖風險。`);
+  if (height <= 55 && height > 0) strengths.push(`${rName} 的低高度能讓 ${bName} 更容易集中打點。`);
+  if ([5, 7, 9].includes(gear)) strengths.push(`${gear} 系固鎖比 1 系更穩，能替 ${bitName} 補一點穩定性。`);
+  if (gear === 9) strengths.push(`${rName} 的 9 系結構通常有較好的爆裂安全與持久穩定性。`);
+
+  return uniqueItems(strengths.length ? strengths : (analysis.strengths || []));
+}
+
+function buildWarnings(config, analysis, baseWarnings) {
+  const warnings = [...baseWarnings];
+  const blade = primaryBladePart(config);
+  const bit = config.parts.bit;
+  const ratchet = config.parts.ratchet;
+  const bName = partTitle(blade) || "此上蓋";
+  const bitName = partTitle(bit) || "此軸心";
+  const rName = partTitle(ratchet) || "此固鎖";
+  const code = bitCode(bit);
+  const height = ratchetHeight(ratchet);
+
+  if (isAttackBlade(blade) && isStaminaBit(bit)) warnings.push(`${bName} 搭持久軸心 ${bitName} 可能降低主動得分，路線會偏混合或衝突。`);
+  if (isStaminaBlade(blade) && isAttackBit(bit)) warnings.push(`${bName} 搭攻擊軸心 ${bitName} 屬於反打或特化玩法，不能只用純攻擊角度評估。`);
+  if (isHeavyAttackBlade(blade) && BURST_BITS.has(code)) warnings.push(`${bitName} 屬於一擊型軸心，續航與控場風險偏高。`);
+  if (isAttackBlade(blade) && !isStaminaBit(bit)) warnings.push(`若第一波沒有讓 ${bName} 打出有效接觸，後段可能會因 ${bitName} 的續航不足而失速。`);
+  if (height >= 70) warnings.push(`${rName} 高度偏高，可能提高重心與被攻擊打到固鎖的機率。`);
+  if (height === 60 && isHeavyAttackBlade(blade) && BURST_BITS.has(code)) warnings.push(`${rName} 雖然穩，但不如 1-60 / 3-60 這類配置更直接強化攻擊對位。`);
+  if ((analysis.scores?.metaConfidence ?? 0) <= 0) warnings.push("資料信心偏低，建議先少量實戰測試再決定是否放入主力牌組。");
+
+  if (!warnings.length) {
+    warnings.push("目前沒有重大結構性風險，建議先實測發射穩定性與對攻擊型的抗壓能力。");
+  }
+
+  return uniqueItems(warnings);
+}
+
+function buildRecommendations(config, analysis) {
+  const recommendations = [...(analysis.recommendations || [])];
+  const blade = primaryBladePart(config);
+  const bit = config.parts.bit;
+  const ratchet = config.parts.ratchet;
+  const code = bitCode(bit);
+  const height = ratchetHeight(ratchet);
+
+  if (isHeavyAttackBlade(blade) && BURST_BITS.has(code)) {
+    recommendations.push("若想提高穩定攻擊，可改 R 或 LR。");
+    recommendations.push("若想提高爆發，可保留 Impact / I 或測 GF、A、V 類軸心。");
+    recommendations.push("若想讓攻擊打點更集中，可測 1-60 或 3-60。");
+  } else if (isAttackBlade(blade)) {
+    recommendations.push("若想提高攻擊穩定度，可優先測 R、LR、P 或 T 類軸心。");
+    recommendations.push("若想提高爆發，可測 1-60、3-60 或更低身位固鎖。");
+  }
+
+  if (isStaminaBlade(blade)) recommendations.push("若想提高持久，可測 B、O、DB、LO 類軸心與 9-60 / 3-60 固鎖。 ");
+  if (isDefenseBlade(blade)) recommendations.push("若想提高防守反打，可測 H、WB、BS 類軸心與 9 系或 7 系固鎖。 ");
+  if (height >= 70) recommendations.push("目前固鎖偏高，可另測 60 高度版本，比較抗打與尾段穩定性。");
+  if (hasIntegratedBit(bit)) recommendations.push("Op / Tr 屬於一體式軸心，調整重點應放在上蓋或 CX 戰刃相性。 ");
+
+  if (!recommendations.length) {
+    recommendations.push("此配置方向明確，可先保留核心零件測試，再依實戰結果微調固鎖或軸心。 ");
+  }
+
+  return uniqueItems(recommendations.map(item => item.trim()));
+}
+
+function buildDeckRole(config, role, analysis) {
+  const blade = primaryBladePart(config);
+  const bit = config.parts.bit;
+  const code = bitCode(bit);
+
+  if (isHeavyAttackBlade(blade) && BURST_BITS.has(code)) return "奇襲攻擊位，不建議當保底持久位。";
+  if (isAttackBlade(blade) && CONTROL_ATTACK_BITS.has(code)) return "3G 前段攻擊位 / 5G 主動得分位。";
+  if (isStaminaBlade(blade) && isStaminaBit(bit)) return "3G 後段持久位 / 5G 穩定收尾位。";
+  if (isDefenseBlade(blade) && isDefenseBit(bit)) return "3G 中後段防守位 / 5G 抗攻擊消耗位。";
+  if ((analysis.scores?.metaConfidence ?? 0) <= 0) return "測試位 / 資料信心不足，先不要放主力位。";
+  return `${role}，可依隊伍缺口放在 3G 中段或 5G 補位。`;
 }
 
 function detailLine(part) {
@@ -359,100 +638,11 @@ function renderScores(scores) {
 }
 
 function renderList(items, className = "") {
-  return items?.length
-    ? items.map(item => `<li class="${className}">${escapeHtml(item)}</li>`).join("")
-    : `<li class="${className}">目前沒有明顯項目。</li>`;
-}
-function partTags(part) {
-  return Array.isArray(part?.roleTags) ? part.roleTags : [];
-}
-
-function comboTags(config) {
-  return Object.values(config.parts).flatMap(partTags);
-}
-
-function hasTag(config, tags) {
-  const wanted = Array.isArray(tags) ? tags : [tags];
-  return comboTags(config).some(tag => wanted.includes(tag));
-}
-
-function ratchetHeight(part) {
-  const source = String(part?.height || part?.code || part?.id || "");
-  const match = source.match(/-(\d+)/);
-  return match ? Number(match[1]) : Number(part?.height || 0);
-}
-
-function ratchetGear(part) {
-  const source = String(part?.gearCount || part?.code || part?.id || "");
-  const match = source.match(/^(\d+)/);
-  return match ? Number(match[1]) : Number(part?.gearCount || 0);
+  return (items || []).map(item => `<li class="${className}">${escapeHtml(item)}</li>`).join("");
 }
 
 function uniqueItems(items) {
-  return [...new Set(items.filter(Boolean))];
-}
-
-function buildDynamicWarnings(config, analysis, baseWarnings) {
-  const warnings = [...baseWarnings];
-  const scores = analysis.scores || {};
-  const { blade, ratchet, bit } = config.parts;
-  const height = ratchetHeight(ratchet);
-  const gear = ratchetGear(ratchet);
-  const bitTags = partTags(bit);
-
-  if ((scores.control ?? 0) <= -1) warnings.push("操控分偏低，實戰時要注意自爆、衝出中心或第一波打空後失速。");
-  if ((scores.burstSafety ?? 0) <= -1) warnings.push("爆裂安全分偏低，遇到高攻擊配置時需要特別留意被打固鎖或爆裂風險。");
-  if ((scores.stamina ?? 0) <= -1 && hasTag(config, ["攻擊", "奇襲"])) warnings.push("持久分偏低，這組比較依賴前中期得分，拖到後段可能不利。");
-  if ((scores.attack ?? 0) <= 0 && hasTag(config, "持久")) warnings.push("主動攻擊分不高，對上純防守或高持久配置時可能需要靠穩定收尾取勝。");
-  if (height >= 70) warnings.push(`${codeOf(ratchet)} 屬於較高固鎖，可能提高重心與被攻擊打到固鎖的機率。`);
-  if (height >= 80) warnings.push("80 以上高度風險更高，除非是明確高位策略，否則建議保守測試。");
-  if (gear === 1 && !bitTags.includes("攻擊")) warnings.push("1 系固鎖偏攻擊取向，若軸心不是攻擊型，配置方向可能不夠集中。");
-  if (hasTag({ parts: { blade } }, "持久") && bitTags.includes("攻擊")) warnings.push("持久型上蓋搭攻擊軸會犧牲尾段續航，適合實驗但不一定穩定。");
-  if (hasTag({ parts: { blade } }, "攻擊") && bitTags.includes("持久")) warnings.push("攻擊型上蓋搭持久軸會降低主動得分能力，可能變成不上不下的配置。");
-  if ((scores.metaConfidence ?? 0) <= 0) warnings.push("資料信心偏低，這組建議先用少量實戰測試再決定是否放進主力牌組。");
-
-  return uniqueItems(warnings);
-}
-
-function buildDynamicRecommendations(config, analysis) {
-  const recommendations = [...(analysis.recommendations || [])];
-  const scores = analysis.scores || {};
-  const { ratchet, bit } = config.parts;
-  const height = ratchetHeight(ratchet);
-
-  if ((scores.attack ?? 0) >= Math.max(scores.stamina ?? 0, scores.defense ?? 0)) {
-    recommendations.push("若想強化攻擊，優先測 1-60、3-60、5-60 搭 R / LR / F 類軸心，並觀察自爆率。");
-  }
-  if ((scores.stamina ?? 0) >= Math.max(scores.attack ?? 0, scores.defense ?? 0)) {
-    recommendations.push("若想強化持久，優先測 9-60、3-60、5-60 搭 B / H / O / FB 類軸心。");
-  }
-  if ((scores.defense ?? 0) >= Math.max(scores.attack ?? 0, scores.stamina ?? 0)) {
-    recommendations.push("若想強化防禦，優先測 9 系或 7 系固鎖，軸心可往 H / UN / B 類型調整。");
-  }
-  if ((scores.control ?? 0) < 0) recommendations.push("若操作不穩，先把軸心換成較可控的 R / P / T / H 類型，或降低固鎖高度。");
-  if ((scores.burstSafety ?? 0) < 0) recommendations.push("若容易爆裂或被打固鎖，優先改 9-60、3-60 或其他 60 高度固鎖測試。");
-  if (height >= 70) recommendations.push("目前固鎖偏高，可另外測 60 高度版本，比較重心、抗打與尾段穩定性。");
-  if (hasIntegratedBit(bit)) recommendations.push("Op / Tr 屬於一體式軸心，建議把比較重點放在上蓋或 CX 戰刃相性，不需要測固鎖替換。");
-  if (!recommendations.length) recommendations.push("目前分數沒有明顯短板，建議直接實戰記錄對攻擊、防禦、持久三類對手的勝負感受。");
-
-  return uniqueItems(recommendations);
-}
-
-function buildDynamicDeckRole(config, analysis) {
-  const scores = analysis.scores || {};
-  const attack = scores.attack ?? 0;
-  const stamina = scores.stamina ?? 0;
-  const defense = scores.defense ?? 0;
-  const control = scores.control ?? 0;
-  const confidence = scores.metaConfidence ?? 0;
-
-  if (confidence <= 0) return "測試位 / 資料信心不足，先不要放主力位。";
-  if (attack >= stamina + 1 && attack >= defense + 1) {
-    return control >= 0 ? "3G 前段攻擊位 / 5G 奇襲或主動得分位" : "5G 奇襲位 / 高風險攻擊測試位";
-  }
-  if (stamina >= attack && stamina >= defense) return "3G 後段持久位 / 5G 穩定收尾位";
-  if (defense >= attack && defense >= stamina) return "3G 中後段防守位 / 5G 抗攻擊與消耗位";
-  return "平衡位 / 依隊伍缺口調整，可放 3G 中段或 5G 補位。";
+  return [...new Set((items || []).filter(Boolean))];
 }
 
 function renderAnalysis() {
@@ -479,34 +669,39 @@ function renderAnalysis() {
   }
 
   const analysis = analyzeCombo(toEngineInput(config), database, rules);
-  const warnings = buildDynamicWarnings(config, analysis, [...validation.warnings, ...(analysis.warnings || [])]);`n  const recommendations = buildDynamicRecommendations(config, analysis);`n  const deckRole = buildDynamicDeckRole(config, analysis);
+  const role = classifyBuild(config, analysis);
+  const summary = buildSummary(config, analysis, role);
+  const strengths = buildStrengths(config, analysis);
+  const warnings = buildWarnings(config, analysis, [...validation.warnings, ...(analysis.warnings || [])]);
+  const recommendations = buildRecommendations(config, analysis);
+  const deckRole = buildDeckRole(config, role, analysis);
 
   result.style.display = "block";
   result.innerHTML = `
     <h3>分析結果</h3>
     <div class="pill-row">
       <span class="analysis-pill">${escapeHtml(config.label)}</span>
-      <span class="analysis-pill">${escapeHtml(analysis.primaryRole || "定位未明")}</span>
+      <span class="analysis-pill">${escapeHtml(role)}</span>
       <span class="analysis-pill">信心：${escapeHtml(analysis.confidence || "未判定")}</span>
       <span class="analysis-pill">${escapeHtml(deckRole)}</span>
     </div>
     <div class="result-card">
       <div class="section-title">一句話定位</div>
-      <div>${escapeHtml(analysis.summary || "目前資料不足，建議先作為測試配置觀察。")}</div>
+      <div>${escapeHtml(summary)}</div>
     </div>
     <div class="section-title">七維分數</div>
     <div class="score-card-grid">${renderScores(analysis.scores)}</div>
     <div class="section-title">已辨識零件</div>
     <ul class="status-list">${renderList(detailParts)}</ul>
     <div class="section-title">優點</div>
-    <ul class="status-list">${renderList(analysis.strengths || [], "status-good")}</ul>
+    <ul class="status-list">${renderList(strengths, "status-good")}</ul>
     <div class="section-title">風險提醒</div>
     <ul class="status-list">${renderList(warnings, "status-warn")}</ul>
     <div class="section-title">改裝建議</div>
     <ul class="status-list">${renderList(recommendations)}</ul>
     <div class="section-title">3G / 5G 建議位置</div>
     <div class="result-card">${escapeHtml(deckRole)}</div>
-    <div class="analysis-note">分析使用 analyzeCombo() 與 v1.0-alpha 規則。這是理論輔助，不等於實戰勝率保證。</div>
+    <div class="analysis-note">分析使用零件權重與相性規則輔助判斷。這是理論輔助，不等於實戰勝率保證。</div>
   `;
 }
 
