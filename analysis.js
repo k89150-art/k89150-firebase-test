@@ -8,6 +8,8 @@ let rules = null;
 let indexes = null;
 let currentMode = "standard";
 let currentUser = null;
+let stockSuggestionCache = null;
+const STOCK_SUGGEST_CACHE_MS = 60000;
 
 const firebaseConfig = {
   apiKey: "AIzaSyABQadKr-Am-55GgFJmhZ0tkRY-joARNAQ",
@@ -24,6 +26,7 @@ const db = getFirestore(firebaseApp);
 
 onAuthStateChanged(auth, user => {
   currentUser = user;
+  stockSuggestionCache = null;
 });
 
 const INTEGRATED_BITS = new Set(["OP", "TR"]);
@@ -145,6 +148,43 @@ function fillOptions() {
   fillDatalist("cxMetalOptions", database.cx?.metalBlades);
   fillDatalist("cxOverOptions", database.cx?.overBlades);
   fillDatalist("cxAssistOptions", database.cx?.assistBlades);
+}
+
+function setInputValue(id, value) {
+  const el = document.getElementById(id);
+  if (el && value) el.value = value;
+}
+
+function applyUrlPreset() {
+  const params = new URLSearchParams(window.location.search);
+  if (!params.has("mode")) return;
+
+  const mode = params.get("mode") || "standard";
+  setMode(mode);
+
+  if (mode === "cx-main") {
+    setInputValue("cxMainLockInput", params.get("lock"));
+    setInputValue("cxMainBladeInput", params.get("main"));
+    setInputValue("cxMainAssistInput", params.get("assist"));
+    setInputValue("cxMainRatchetInput", params.get("ratchet"));
+    setInputValue("cxMainBitInput", params.get("bit"));
+  } else if (mode === "cx-split") {
+    setInputValue("cxSplitLockInput", params.get("lock"));
+    setInputValue("cxMetalInput", params.get("metal"));
+    setInputValue("cxOverInput", params.get("over"));
+    setInputValue("cxSplitAssistInput", params.get("assist"));
+    setInputValue("cxSplitRatchetInput", params.get("ratchet"));
+    setInputValue("cxSplitBitInput", params.get("bit"));
+  } else {
+    setInputValue("bladeInput", params.get("blade"));
+    setInputValue("standardRatchetInput", params.get("ratchet"));
+    setInputValue("standardBitInput", params.get("bit"));
+  }
+
+  if (params.get("auto") === "1") {
+    renderAnalysis();
+    document.getElementById("analysisResult")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
 }
 
 function findPart(indexName, input) {
@@ -840,7 +880,7 @@ function pickTopSuggestions(suggestions) {
   });
 }
 
-function renderStockSuggestions(items, owned) {
+function renderStockSuggestions(items, owned, fromCache = false) {
   const result = document.getElementById("stockSuggestResult");
   if (!result) return;
 
@@ -852,26 +892,30 @@ function renderStockSuggestions(items, owned) {
     return;
   }
 
-  const summary = `已讀取：上蓋 ${owned.blades.size}、固鎖 ${owned.ratchets.size}、軸心 ${owned.bits.size}。以下只列出分數較高的測試方向。`;
+  const summary = `已讀取：上蓋 ${owned.blades.size}、固鎖 ${owned.ratchets.size}、軸心 ${owned.bits.size}。以下只列出分數較高的測試方向。${fromCache ? "（使用 60 秒內快取，未重新讀取雲端）" : ""}`;
   result.style.display = "block";
   result.innerHTML = `
     <div class="analysis-note">${escapeHtml(summary)}</div>
     <div class="suggestion-grid">
-      ${items.map(item => `
-        <div class="suggestion-card">
-          <div class="suggestion-card-top">
-            <span class="analysis-pill">${escapeHtml(item.targetLabel)}</span>
+      ${items.map((item, index) => `
+        <details class="suggestion-card" ${index === 0 ? "open" : ""}>
+          <summary class="suggestion-summary">
+            <span>
+              <span class="analysis-pill">${escapeHtml(item.targetLabel)}</span>
+              <span class="suggestion-title">${escapeHtml(item.label)}</span>
+            </span>
             <span class="suggestion-score">${escapeHtml(item.value)}</span>
-          </div>
-          <div class="suggestion-title">${escapeHtml(item.label)}</div>
+          </summary>
           <div class="analysis-note">${escapeHtml(item.role)}｜${escapeHtml(item.deckRole)}</div>
-          <div class="section-title">優點</div>
-          <ul class="status-list">${renderList(item.strengths, "status-good")}</ul>
-          <div class="section-title">注意</div>
-          <ul class="status-list">${renderList(item.warnings, "status-warn")}</ul>
-          <div class="section-title">可怎麼測</div>
-          <ul class="status-list">${renderList(item.recommendations)}</ul>
-        </div>
+          <div class="suggestion-detail">
+            <div class="section-title">優點</div>
+            <ul class="status-list">${renderList(item.strengths, "status-good")}</ul>
+            <div class="section-title">注意</div>
+            <ul class="status-list">${renderList(item.warnings, "status-warn")}</ul>
+            <div class="section-title">可怎麼測</div>
+            <ul class="status-list">${renderList(item.recommendations)}</ul>
+          </div>
+        </details>
       `).join("")}
     </div>
   `;
@@ -889,6 +933,17 @@ async function renderStockSuggestionsFromCloud() {
 
   try {
     await loadData();
+
+    const now = Date.now();
+    if (
+      stockSuggestionCache &&
+      stockSuggestionCache.uid === currentUser.uid &&
+      now - stockSuggestionCache.createdAt < STOCK_SUGGEST_CACHE_MS
+    ) {
+      renderStockSuggestions(stockSuggestionCache.suggestions, stockSuggestionCache.owned, true);
+      return;
+    }
+
     result.style.display = "block";
     result.innerHTML = `<div class="analysis-note">正在讀取你的庫存並產生建議...</div>`;
 
@@ -900,6 +955,12 @@ async function renderStockSuggestionsFromCloud() {
 
     const owned = readOwnedPartsFromSavedData(snap.data());
     const suggestions = pickTopSuggestions(buildStandardSuggestions(owned));
+    stockSuggestionCache = {
+      uid: currentUser.uid,
+      createdAt: Date.now(),
+      owned,
+      suggestions
+    };
     renderStockSuggestions(suggestions, owned);
   } catch (error) {
     console.error("庫存推薦產生失敗", error);
@@ -989,6 +1050,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   try {
     await loadData();
+    applyUrlPreset();
   } catch (error) {
     console.error("配置分析資料載入失敗", error);
     const result = document.getElementById("analysisResult");
