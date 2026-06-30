@@ -1,9 +1,30 @@
 import { analyzeCombo } from "./beyblade_x_analysis_engine_v1_zhTW.js?v=20260630-v11-contextual1";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-app.js";
+import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-auth.js";
+import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-firestore.js";
 
 let database = null;
 let rules = null;
 let indexes = null;
 let currentMode = "standard";
+let currentUser = null;
+
+const firebaseConfig = {
+  apiKey: "AIzaSyABQadKr-Am-55GgFJmhZ0tkRY-joARNAQ",
+  authDomain: "k89150-web-login.firebaseapp.com",
+  projectId: "k89150-web-login",
+  storageBucket: "k89150-web-login.firebasestorage.app",
+  messagingSenderId: "488040360398",
+  appId: "1:488040360398:web:759698c16eb67e14f1639f"
+};
+
+const firebaseApp = initializeApp(firebaseConfig);
+const auth = getAuth(firebaseApp);
+const db = getFirestore(firebaseApp);
+
+onAuthStateChanged(auth, user => {
+  currentUser = user;
+});
 
 const INTEGRATED_BITS = new Set(["OP", "TR"]);
 const NO_RATCHET_MODELS = new Set(["UX-19"]);
@@ -645,6 +666,248 @@ function uniqueItems(items) {
   return [...new Set((items || []).filter(Boolean))];
 }
 
+function userDocRef() {
+  if (!currentUser) return null;
+  return doc(db, "users", currentUser.uid, "appData", "main");
+}
+
+function isUsefulCell(value) {
+  const text = String(value || "").trim();
+  return Boolean(text && text !== "-" && text !== "無");
+}
+
+function addOwnedName(bucket, name, count = 1) {
+  if (!isUsefulCell(name)) return;
+  const key = normalizeText(name);
+  const existing = bucket.get(key) || { name: String(name).trim(), count: 0 };
+  existing.count += Math.max(1, Number(count) || 1);
+  bucket.set(key, existing);
+}
+
+function createOwnedBuckets() {
+  return {
+    blades: new Map(),
+    ratchets: new Map(),
+    bits: new Map(),
+    locks: new Map(),
+    mains: new Map(),
+    metals: new Map(),
+    overs: new Map(),
+    assists: new Map()
+  };
+}
+
+function addBeybladeRowToOwned(owned, row) {
+  const cells = row?.cells || [];
+  addOwnedName(owned.blades, cells[1]);
+  addOwnedName(owned.locks, cells[2]);
+  addOwnedName(owned.mains, cells[3]);
+  addOwnedName(owned.overs, cells[4]);
+  addOwnedName(owned.metals, cells[5]);
+  addOwnedName(owned.assists, cells[6]);
+  addOwnedName(owned.ratchets, cells[7]);
+  addOwnedName(owned.bits, cells[8]);
+}
+
+function addPartRowToOwned(owned, row) {
+  const cells = row?.cells || [];
+  const type = String(cells[0] || "").trim();
+  const name = String(cells[1] || "").trim();
+  const count = Number(cells[2]) || 1;
+
+  const target = {
+    上蓋: owned.blades,
+    固鎖: owned.ratchets,
+    軸心: owned.bits,
+    紋章鎖: owned.locks,
+    主要戰刃: owned.mains,
+    金屬戰刃: owned.metals,
+    超越戰刃: owned.overs,
+    輔助戰刃: owned.assists
+  }[type];
+
+  if (target) addOwnedName(target, name, count);
+}
+
+function readOwnedPartsFromSavedData(data) {
+  const owned = createOwnedBuckets();
+  (data?.beybladeTable || []).forEach(row => addBeybladeRowToOwned(owned, row));
+  (data?.partTable || []).forEach(row => addPartRowToOwned(owned, row));
+  return owned;
+}
+
+function partsFromBucket(bucket, indexName, limit = 10) {
+  return [...bucket.values()]
+    .map(item => ({ owned: item, part: findPart(indexName, item.name) }))
+    .filter(item => item.part)
+    .sort((a, b) => b.owned.count - a.owned.count)
+    .slice(0, limit)
+    .map(item => item.part);
+}
+
+function noRatchetCandidatesFor(blade, bit, ratchets) {
+  if (hasNoRatchetBlade(blade) || hasIntegratedBit(bit)) return [null];
+  return ratchets;
+}
+
+function isSuggestionLegal(blade, ratchet, bit) {
+  if (!bit) return false;
+  if ((hasNoRatchetBlade(blade) || hasIntegratedBit(bit)) && ratchet) return false;
+  if (!hasNoRatchetBlade(blade) && !hasIntegratedBit(bit) && !ratchet) return false;
+  if (isUx16Blade(blade) && ratchet && !isSimpleRatchet(ratchet)) return false;
+  return true;
+}
+
+function analysisScoreValue(analysis, target) {
+  const scores = analysis?.scores || {};
+  const base = {
+    attack: (scores.attack || 0) * 1.45 + (scores.control || 0) * 0.7 + (scores.burstSafety || 0) * 0.35,
+    stamina: (scores.stamina || 0) * 1.45 + (scores.burstSafety || 0) * 0.7 + (scores.control || 0) * 0.45,
+    defense: (scores.defense || 0) * 1.45 + (scores.burstSafety || 0) * 0.7 + (scores.control || 0) * 0.45,
+    balance: (scores.balance || 0) * 1.2 + (scores.control || 0) * 0.75 + (scores.burstSafety || 0) * 0.45
+  }[target] || 0;
+
+  return Math.round((base + (scores.metaConfidence || 0) * 0.25) * 10) / 10;
+}
+
+function makeStandardSuggestion(blade, ratchet, bit, target) {
+  const config = {
+    label: "庫存推薦",
+    inputs: {},
+    parts: { blade, ratchet, bit },
+    required: ["blade", "bit"],
+    ratchetInput: ratchet ? codeOf(ratchet) : "-"
+  };
+
+  const analysis = analyzeCombo(toEngineInput(config), database, { debug: false });
+  const role = classifyBuild(config, analysis);
+  const label = [partTitle(blade), ratchet ? partTitle(ratchet) : "無固鎖", partTitle(bit)].filter(Boolean).join(" / ");
+
+  return {
+    target,
+    label,
+    role,
+    analysis,
+    value: analysisScoreValue(analysis, target),
+    strengths: buildStrengths(config, analysis).slice(0, 2),
+    warnings: buildWarnings(config, analysis, analysis.warnings || []).slice(0, 2),
+    recommendations: buildRecommendations(config, analysis).slice(0, 2),
+    deckRole: buildDeckRole(config, role, analysis)
+  };
+}
+
+function buildStandardSuggestions(owned) {
+  const blades = partsFromBucket(owned.blades, "blades", 8);
+  const ratchets = partsFromBucket(owned.ratchets, "ratchets", 10);
+  const bits = partsFromBucket(owned.bits, "bits", 10);
+  const suggestions = [];
+
+  blades.forEach(blade => {
+    bits.forEach(bit => {
+      noRatchetCandidatesFor(blade, bit, ratchets).forEach(ratchet => {
+        if (!isSuggestionLegal(blade, ratchet, bit)) return;
+        ["attack", "stamina", "defense", "balance"].forEach(target => {
+          suggestions.push(makeStandardSuggestion(blade, ratchet, bit, target));
+        });
+      });
+    });
+  });
+
+  return suggestions;
+}
+
+function pickTopSuggestions(suggestions) {
+  const labels = {
+    attack: "攻擊推薦",
+    stamina: "持久推薦",
+    defense: "防守推薦",
+    balance: "平衡推薦"
+  };
+
+  return Object.keys(labels).flatMap(target => {
+    const seen = new Set();
+    return suggestions
+      .filter(item => item.target === target)
+      .sort((a, b) => b.value - a.value)
+      .filter(item => {
+        const key = normalizeText(item.label);
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      })
+      .slice(0, 2)
+      .map(item => ({ ...item, targetLabel: labels[target] }));
+  });
+}
+
+function renderStockSuggestions(items, owned) {
+  const result = document.getElementById("stockSuggestResult");
+  if (!result) return;
+
+  if (!items.length) {
+    result.style.display = "block";
+    result.innerHTML = `
+      <div class="status-bad">目前資料不足，找不到可分析的上蓋、固鎖與軸心。請先在工具頁新增持有零件或陀螺資料。</div>
+    `;
+    return;
+  }
+
+  const summary = `已讀取：上蓋 ${owned.blades.size}、固鎖 ${owned.ratchets.size}、軸心 ${owned.bits.size}。以下只列出分數較高的測試方向。`;
+  result.style.display = "block";
+  result.innerHTML = `
+    <div class="analysis-note">${escapeHtml(summary)}</div>
+    <div class="suggestion-grid">
+      ${items.map(item => `
+        <div class="suggestion-card">
+          <div class="suggestion-card-top">
+            <span class="analysis-pill">${escapeHtml(item.targetLabel)}</span>
+            <span class="suggestion-score">${escapeHtml(item.value)}</span>
+          </div>
+          <div class="suggestion-title">${escapeHtml(item.label)}</div>
+          <div class="analysis-note">${escapeHtml(item.role)}｜${escapeHtml(item.deckRole)}</div>
+          <div class="section-title">優點</div>
+          <ul class="status-list">${renderList(item.strengths, "status-good")}</ul>
+          <div class="section-title">注意</div>
+          <ul class="status-list">${renderList(item.warnings, "status-warn")}</ul>
+          <div class="section-title">可怎麼測</div>
+          <ul class="status-list">${renderList(item.recommendations)}</ul>
+        </div>
+      `).join("")}
+    </div>
+  `;
+}
+
+async function renderStockSuggestionsFromCloud() {
+  const result = document.getElementById("stockSuggestResult");
+  if (!result) return;
+
+  if (!currentUser) {
+    result.style.display = "block";
+    result.innerHTML = `<div class="status-bad">請先在工具頁使用 Google 登入，再回來產生庫存推薦。</div>`;
+    return;
+  }
+
+  try {
+    await loadData();
+    result.style.display = "block";
+    result.innerHTML = `<div class="analysis-note">正在讀取你的庫存並產生建議...</div>`;
+
+    const snap = await getDoc(userDocRef());
+    if (!snap.exists()) {
+      result.innerHTML = `<div class="status-bad">找不到你的雲端資料。請先到工具頁新增資料並確認已儲存。</div>`;
+      return;
+    }
+
+    const owned = readOwnedPartsFromSavedData(snap.data());
+    const suggestions = pickTopSuggestions(buildStandardSuggestions(owned));
+    renderStockSuggestions(suggestions, owned);
+  } catch (error) {
+    console.error("庫存推薦產生失敗", error);
+    result.style.display = "block";
+    result.innerHTML = `<div class="status-bad">庫存推薦產生失敗：${escapeHtml(error.message)}</div>`;
+  }
+}
+
 function renderAnalysis() {
   const result = document.getElementById("analysisResult");
   const config = collectConfig();
@@ -722,6 +985,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   document.querySelectorAll(".mode-tab").forEach(button => button.addEventListener("click", () => setMode(button.dataset.mode)));
   document.getElementById("analyzeBtn")?.addEventListener("click", renderAnalysis);
   document.getElementById("clearBtn")?.addEventListener("click", clearForm);
+  document.getElementById("suggestFromStockBtn")?.addEventListener("click", renderStockSuggestionsFromCloud);
 
   try {
     await loadData();
