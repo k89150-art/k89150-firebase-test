@@ -146,9 +146,18 @@ async function loadData() {
 }
 
 function optionLabel(item) {
-  const prefix = item.model ? `${item.model} ` : item.code && item.code !== item.id ? `${item.code} ` : "";
-  const name = item.name || item.id || item.code || "";
-  return `${prefix}${name}`.trim();
+  if (!item) return "";
+
+  const code = item.code || "";
+  const chineseName = item.name || item.displayName || "";
+  const englishName = item.name_en || (item.model && item.model !== chineseName ? item.model : "");
+
+  if (code && englishName) return `${code}（${englishName}）`;
+  if (chineseName && englishName && normalizeText(chineseName) !== normalizeText(englishName)) {
+    return `${chineseName}（${englishName}）`;
+  }
+  if (code && chineseName && normalizeText(code) !== normalizeText(chineseName)) return `${code}（${chineseName}）`;
+  return chineseName || code || englishName || item.id || "";
 }
 
 function addIndex(index, item, keys) {
@@ -165,9 +174,13 @@ function buildPartIndex(items = []) {
       item.id,
       item.code,
       item.name,
+      item.name_en,
+      item.displayName,
       item.model,
       optionLabel(item),
-      item.model && item.name ? `${item.model}${item.name}` : ""
+      item.model && item.name ? `${item.model}${item.name}` : "",
+      item.name && item.name_en ? `${item.name}${item.name_en}` : "",
+      item.code && item.name_en ? `${item.code}${item.name_en}` : ""
     ].filter(Boolean));
   });
   return index;
@@ -288,9 +301,23 @@ function nameOf(part) {
 
 function partTitle(part) {
   if (!part) return "";
-  const code = part.code && part.code !== part.id ? ` / ${part.code}` : "";
-  const model = part.model ? `${part.model} ` : "";
-  return `${model}${part.name || part.id}${code}`;
+
+  const code = part.code || "";
+  const chineseName = part.name || part.displayName || "";
+  const englishName = part.name_en || (part.model && part.model !== chineseName ? part.model : "");
+
+  if (code && englishName) return `${code}（${englishName}）`;
+  if (chineseName && englishName && normalizeText(chineseName) !== normalizeText(englishName)) {
+    return `${chineseName}（${englishName}）`;
+  }
+  if (code && chineseName && normalizeText(code) !== normalizeText(chineseName)) return `${code}（${chineseName}）`;
+  return chineseName || code || englishName || part.id || "";
+}
+
+function partSentenceName(part) {
+  if (!part) return "";
+  if (part.code) return part.code;
+  return part.name || part.displayName || part.id || part.name_en || part.model || "";
 }
 
 function tagsOf(part) {
@@ -629,7 +656,7 @@ function buildSummary(config, analysis, role) {
   const blade = primaryBladePart(config);
   const bit = config.parts.bit;
   const ratchet = config.parts.ratchet;
-  const parts = [partTitle(blade), partTitle(ratchet), partTitle(bit)].filter(Boolean).join(" / ");
+  const parts = [partSentenceName(blade), partSentenceName(ratchet), partSentenceName(bit)].filter(Boolean).join(" + ");
   return `${role}。${parts} 的組合方向以${role.replace(/\s*\/.*$/, "")}為主，建議用實戰確認發射穩定性與對位表現。`;
 }
 
@@ -638,9 +665,9 @@ function buildStrengths(config, analysis) {
   const blade = primaryBladePart(config);
   const bit = config.parts.bit;
   const ratchet = config.parts.ratchet;
-  const bName = partTitle(blade) || "此上蓋";
-  const bitName = partTitle(bit) || "此軸心";
-  const rName = partTitle(ratchet) || "此固鎖";
+  const bName = partSentenceName(blade) || "此上蓋";
+  const bitName = partSentenceName(bit) || "此軸心";
+  const rName = partSentenceName(ratchet) || "此固鎖";
   const code = bitCode(bit);
   const height = ratchetHeight(ratchet);
   const gear = ratchetGear(ratchet);
@@ -664,9 +691,9 @@ function buildWarnings(config, analysis, baseWarnings) {
   const blade = primaryBladePart(config);
   const bit = config.parts.bit;
   const ratchet = config.parts.ratchet;
-  const bName = partTitle(blade) || "此上蓋";
-  const bitName = partTitle(bit) || "此軸心";
-  const rName = partTitle(ratchet) || "此固鎖";
+  const bName = partSentenceName(blade) || "此上蓋";
+  const bitName = partSentenceName(bit) || "此軸心";
+  const rName = partSentenceName(ratchet) || "此固鎖";
   const code = bitCode(bit);
   const height = ratchetHeight(ratchet);
 
@@ -730,9 +757,8 @@ function buildDeckRole(config, role, analysis) {
 function detailLine(part) {
   if (!part) return "";
   const tier = part.metaTier ? `Tier ${part.metaTier}` : "未標 Tier";
-  const confidence = part.confidence ? `信心 ${part.confidence}` : "信心未標";
   const role = part.role ? `，${part.role}` : "";
-  return `${partTitle(part)}，${tier}，${confidence}${role}`;
+  return `${partTitle(part)}，${tier}${role}`;
 }
 
 function scorePercent(value) {
@@ -877,7 +903,7 @@ function makeStandardSuggestion(blade, ratchet, bit, target) {
 
   const analysis = analyzeCombo(toEngineInput(config), database, { debug: false });
   const role = classifyBuild(config, analysis);
-  const label = [partTitle(blade), ratchet ? partTitle(ratchet) : "無固鎖", partTitle(bit)].filter(Boolean).join(" / ");
+  const label = [partSentenceName(blade), ratchet ? partSentenceName(ratchet) : "無固鎖", partSentenceName(bit)].filter(Boolean).join(" + ");
 
   return {
     target,
